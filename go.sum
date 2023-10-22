@@ -119,8 +119,6 @@ github.com/sagernet/sing-dns v0.3.0-beta.5 h1:lX+wfnBVaOlSd7+GBgb431Tt/gmYwJXSHv
 github.com/sagernet/sing-dns v0.3.0-beta.5/go.mod h1:qeO/lOUK/c3Zczp5a1VO13fbmolaM8xGKCUXtaX0/NQ=
 github.com/sagernet/sing-mux v0.2.0 h1:4C+vd8HztJCWNYfufvgL49xaOoOHXty2+EAjnzN3IYo=
 github.com/sagernet/sing-mux v0.2.0/go.mod h1:khzr9AOPocLa+g53dBplwNDz4gdsyx/YM3swtAhlkHQ=
-github.com/sagernet/sing-quic v0.2.0-beta.9 h1:gfqUwVgKA6APwFOPhwge9VrPZ0XQtmuXF8hbbIVZML8=
-github.com/sagernet/sing-quic v0.2.0-beta.9/go.mod h1:hb6RwYy9Js0gZi80zlTBWABMOIvJDv46K5yak/pbZ4w=
 github.com/sagernet/sing-shadowsocks v0.2.6 h1:xr7ylAS/q1cQYS8oxKKajhuQcchd5VJJ4K4UZrrpp0s=
 github.com/sagernet/sing-shadowsocks v0.2.6/go.mod h1:j2YZBIpWIuElPFL/5sJAj470bcn/3QQ5lxZUNKLDNAM=
 github.com/sagernet/sing-shadowsocks2 v0.2.0 h1:wpZNs6wKnR7mh1wV9OHwOyUr21VkS3wKFHi+8XwgADg=
@@ -155,6 +153,8 @@ github.com/u-root/uio v0.0.0-20230220225925-ffce2a382923 h1:tHNk7XK9GkmKUR6Gh8gV
 github.com/u-root/uio v0.0.0-20230220225925-ffce2a382923/go.mod h1:eLL9Nub3yfAho7qB0MzZizFhTU2QkLeoVsWdHtDW264=
 github.com/vishvananda/netns v0.0.4 h1:Oeaw1EM2JMxD51g9uhtC0D7erkIjgmj8+JZc26m1YX8=
 github.com/vishvananda/netns v0.0.4/go.mod h1:SpkAiCQRtJ6TvvxPnOSyH3BMl6unz3xZlaprSwhNNJM=
+github.com/xchacha20-poly1305/sing-quic v0.2.0-beta.9 h1:Si12deCTEMPyqANDUVctGB7kmOk8T7JRk++WJ9LLW2I=
+github.com/xchacha20-poly1305/sing-quic v0.2.0-beta.9/go.mod h1:hb6RwYy9Js0gZi80zlTBWABMOIvJDv46K5yak/pbZ4w=
 github.com/zeebo/assert v1.1.0 h1:hU1L1vLTHsnO8x8c9KAR5GmM5QscxHg5RNU5z5qbUWY=
 github.com/zeebo/assert v1.1.0/go.mod h1:Pq9JiuJQpG8JLJdtkwrJESF0Foym2/D9XMU5ciN/wJ0=
 github.com/zeebo/blake3 v0.2.3 h1:TFoLXsjeXqRNFxSbk35Dk4YtszE/MQQGK10BH4ptoTg=
