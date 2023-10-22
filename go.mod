@@ -54,6 +54,7 @@ require (
 )
 
 //replace github.com/sagernet/sing => ../sing
+replace github.com/sagernet/sing-quic => github.com/xchacha20-poly1305/sing-quic v0.1.9-beta.3
 
 require (
 	github.com/ajg/form v1.5.1 // indirect
