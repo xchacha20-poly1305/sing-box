@@ -9,7 +9,7 @@ import (
 	"github.com/sagernet/sing-box/adapter"
 	C "github.com/sagernet/sing-box/constant"
 	"github.com/sagernet/sing-box/log"
-	"github.com/sagernet/sing-dns"
+	dns "github.com/sagernet/sing-dns"
 	"github.com/sagernet/sing/common/cache"
 	E "github.com/sagernet/sing/common/exceptions"
 	F "github.com/sagernet/sing/common/format"
@@ -123,7 +123,8 @@ func (r *Router) Exchange(ctx context.Context, message *mDNS.Msg) (*mDNS.Msg, er
 
 func (r *Router) Lookup(ctx context.Context, domain string, strategy dns.DomainStrategy) ([]netip.Addr, error) {
 	if strings.HasSuffix("."+domain, ".localhost") {
-		return []netip.Addr{netip.AddrFrom4([4]byte{127, 0, 0, 1})}, nil
+		return []netip.Addr{netip.AddrFrom4([4]byte{127, 0, 0, 1}),
+			netip.AddrFrom16([16]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1})}, nil
 	}
 	r.dnsLogger.DebugContext(ctx, "lookup domain ", domain)
 	ctx, metadata := adapter.AppendContext(ctx)
@@ -171,9 +172,7 @@ func fqdnToDomain(fqdn string) string {
 }
 
 func formatQuestion(string string) string {
-	if strings.HasPrefix(string, ";") {
-		string = string[1:]
-	}
+	string = strings.TrimPrefix(string, ";")
 	string = strings.ReplaceAll(string, "\t", " ")
 	for strings.Contains(string, "  ") {
 		string = strings.ReplaceAll(string, "  ", " ")
