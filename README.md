@@ -8,6 +8,50 @@
 
 # sing-box
 
+# Changes
+
+## Dialer
+
+```json
+{
+  "outbounds": [
+    {
+      "type": "direct",
+      "tag": "direct",
+      "tcp_keep_alive_interval": "15s",
+      "tcp_keep_alive_idle": "10min"
+    }
+  ]
+}
+```
+
+TCP Keep alive options.
+
+## Inbound TLS
+
+```json
+{
+  "inbounds": [
+    {
+      "type": "trojan",
+      "tag": "trojan-in",
+      "tls": {
+        "enabled": true,
+        "server_name": "sekai.love",
+        "certificate_path": "cert.pem",
+        "key_path": "key.key",
+        "reject_unknown_sni": true
+      }
+    }
+  ]
+}
+```
+
+Reject unknown sni: If the server name of connection is not equal to `server_name` and not be included in certificate,
+it will be rejected.
+
+拒绝未知 SNI：如果连接的 server name 与 `server_name` 不符 且 证书中不包含它，则拒绝连接。
+
 ## License
 
 ```
