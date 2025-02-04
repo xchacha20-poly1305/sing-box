@@ -21344,6 +21344,9 @@
             },
             "permit_without_stream": {
               "type": "boolean"
+            },
+            "force_lite": {
+              "type": "boolean"
             }
           },
           "required": [
