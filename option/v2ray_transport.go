@@ -90,7 +90,7 @@ type V2RayGRPCOptions struct {
 	IdleTimeout         badoption.Duration `json:"idle_timeout,omitempty"`
 	PingTimeout         badoption.Duration `json:"ping_timeout,omitempty"`
 	PermitWithoutStream bool               `json:"permit_without_stream,omitempty"`
-	ForceLite           bool               `json:"-"` // for test
+	ForceLite           bool               `json:"force_lite,omitempty"`
 }
 
 type V2RayHTTPUpgradeOptions struct {
