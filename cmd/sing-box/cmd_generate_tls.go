@@ -1,11 +1,13 @@
 package main
 
 import (
+	"io"
 	"os"
 	"time"
 
 	"github.com/sagernet/sing-box/common/tls"
 	"github.com/sagernet/sing-box/log"
+	E "github.com/sagernet/sing/common/exceptions"
 
 	"github.com/spf13/cobra"
 )
@@ -27,6 +29,8 @@ var commandGenerateTLSKeyPair = &cobra.Command{
 func init() {
 	commandGenerateTLSKeyPair.Flags().IntVarP(&flagGenerateTLSKeyPairMonths, "months", "m", 1, "Valid months")
 	commandGenerate.AddCommand(commandGenerateTLSKeyPair)
+
+	commandGenerate.AddCommand(commandGeneratePemHash)
 }
 
 func generateTLSKeyPair(serverName string) error {
@@ -36,5 +40,39 @@ func generateTLSKeyPair(serverName string) error {
 	}
 	os.Stdout.WriteString(string(privateKeyPem) + "\n")
 	os.Stdout.WriteString(string(publicKeyPem) + "\n")
+	return nil
+}
+
+var commandGeneratePemHash = &cobra.Command{
+	Use:   "pem-hash <file>",
+	Short: "Generate V2Ray style cert chain hash",
+	Args:  cobra.ExactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		err := generatePemHash(args[0])
+		if err != nil {
+			log.Fatal(err)
+		}
+	},
+}
+
+func generatePemHash(input string) error {
+	var reader io.Reader
+	switch input {
+	case "-", "stdin":
+		reader = os.Stdin
+	default:
+		file, err := os.Open(input)
+		if err != nil {
+			return E.Cause(err, "open cert file")
+		}
+		defer file.Close()
+		reader = file
+	}
+	content, err := io.ReadAll(reader)
+	if err != nil {
+		return E.Cause(err, "read cert content")
+	}
+	hash := tls.CalculatePEMCertHash(content)
+	os.Stdout.WriteString(string(hash) + "\n")
 	return nil
 }
