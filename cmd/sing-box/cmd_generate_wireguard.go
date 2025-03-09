@@ -12,6 +12,7 @@ import (
 
 func init() {
 	commandGenerate.AddCommand(commandGenerateWireGuardKeyPair)
+	commandGenerate.AddCommand(commandGenerateWireGuardPreSharedKey)
 	commandGenerate.AddCommand(commandGenerateRealityKeyPair)
 }
 
@@ -34,6 +35,27 @@ func generateWireGuardKey() error {
 	}
 	os.Stdout.WriteString("PrivateKey: " + privateKey.String() + "\n")
 	os.Stdout.WriteString("PublicKey: " + privateKey.PublicKey().String() + "\n")
+	return nil
+}
+
+var commandGenerateWireGuardPreSharedKey = &cobra.Command{
+	Use:   "wg-psk",
+	Short: "Generate WireGuard pre-shared key",
+	Args:  cobra.NoArgs,
+	Run: func(cmd *cobra.Command, args []string) {
+		err := generateWireGuardPreSharedKey()
+		if err != nil {
+			log.Fatal(err)
+		}
+	},
+}
+
+func generateWireGuardPreSharedKey() error {
+	privateKey, err := wgtypes.GeneratePrivateKey()
+	if err != nil {
+		return err
+	}
+	os.Stdout.WriteString("PreSharedKey: " + privateKey.String() + "\n")
 	return nil
 }
 
