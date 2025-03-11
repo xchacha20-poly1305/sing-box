@@ -239,6 +239,10 @@ _Note: Not support pin sha256_
 - `time_range` Listable. This function can restrict your kids' internet access.
 - `time_zone` Time zone for `time_range`. List see <https://en.wikipedia.org/wiki/List_of_tz_database_time_zones#List>. If empty, the behavior is nearly undefined.(Usually uses local or UTC)
 
+For extended features
+
+- Providers: [中文](./docs/configuration/provider/index.zh.md), [English](./docs/configuration/provider/index.md)
+
 ## License
 
 ```
