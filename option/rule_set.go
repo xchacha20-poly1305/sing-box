@@ -113,6 +113,9 @@ func (r *RuleSet) UnmarshalJSON(bytes []byte) error {
 			if !strings.Contains(r.RemoteOptions.URL, C.RuleSetTagPlaceholder) {
 				return E.New("missing ", C.RuleSetTagPlaceholder, " placeholder in url")
 			}
+			if r.Path != "" && !strings.Contains(r.Path, C.RuleSetTagPlaceholder) {
+				return E.New("missing ", C.RuleSetTagPlaceholder, " placeholder in path")
+			}
 		}
 	}
 	return nil
