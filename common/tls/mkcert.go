@@ -1,6 +1,8 @@
 package tls
 
 import (
+	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/tls"
@@ -61,5 +63,45 @@ func GenerateCertificate(parent *x509.Certificate, parentKey any, timeFunc func(
 	}
 	publicKeyPem = pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: publicDer})
 	privateKeyPem = pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: privateDer})
+	return
+}
+
+func GenerateCertificateECC(parent *x509.Certificate, parentKey any, timeFunc func() time.Time, serverName string, expire time.Time) (privateKeyPem []byte, publicKeyPem []byte, err error) {
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		return
+	}
+	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
+	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
+	if err != nil {
+		return
+	}
+	now := timeFunc()
+	template := &x509.Certificate{
+		SerialNumber: serialNumber,
+		Subject: pkix.Name{
+			CommonName: serverName,
+		},
+		NotBefore:             now.Add(time.Hour * -1),
+		NotAfter:              expire,
+		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		BasicConstraintsValid: true,
+		DNSNames:              []string{serverName},
+	}
+	if parent == nil {
+		parent = template
+		parentKey = key
+	}
+	publicDer, err := x509.CreateCertificate(rand.Reader, template, parent, key.Public(), parentKey)
+	if err != nil {
+		return
+	}
+	privateDer, err := x509.MarshalPKCS8PrivateKey(key)
+	if err != nil {
+		return
+	}
+	publicKeyPem = pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: publicDer})
+	privateKeyPem = pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: privateDer}) // 与原函数保持一致
 	return
 }

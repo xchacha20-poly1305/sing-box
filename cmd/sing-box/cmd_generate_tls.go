@@ -12,7 +12,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var flagGenerateTLSKeyPairMonths int
+var (
+	flagGenerateTLSKeyPairMonths int
+	flagGenerateTLSKeyPairEcc    bool
+)
 
 var commandGenerateTLSKeyPair = &cobra.Command{
 	Use:   "tls-keypair <server_name>",
@@ -28,19 +31,26 @@ var commandGenerateTLSKeyPair = &cobra.Command{
 
 func init() {
 	commandGenerateTLSKeyPair.Flags().IntVarP(&flagGenerateTLSKeyPairMonths, "months", "m", 1, "Valid months")
+	commandGenerateTLSKeyPair.Flags().BoolVarP(&flagGenerateTLSKeyPairEcc, "ecc", "e", false, "Use ECDSA instead of RSA")
 	commandGenerate.AddCommand(commandGenerateTLSKeyPair)
 
 	commandGenerate.AddCommand(commandGeneratePemHash)
 }
 
-func generateTLSKeyPair(serverName string) error {
-	privateKeyPem, publicKeyPem, err := tls.GenerateCertificate(nil, nil, time.Now, serverName, time.Now().AddDate(0, flagGenerateTLSKeyPairMonths, 0))
+func generateTLSKeyPair(serverName string) (err error) {
+	var privateKeyPem, publicKeyPem []byte
+	expire := time.Now().AddDate(0, flagGenerateTLSKeyPairMonths, 0)
+	if flagGenerateTLSKeyPairEcc {
+		privateKeyPem, publicKeyPem, err = tls.GenerateCertificateECC(nil, nil, time.Now, serverName, expire)
+	} else {
+		privateKeyPem, publicKeyPem, err = tls.GenerateCertificate(nil, nil, time.Now, serverName, expire)
+	}
 	if err != nil {
-		return err
+		return
 	}
 	os.Stdout.WriteString(string(privateKeyPem) + "\n")
 	os.Stdout.WriteString(string(publicKeyPem) + "\n")
-	return nil
+	return
 }
 
 var commandGeneratePemHash = &cobra.Command{
