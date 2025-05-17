@@ -3,7 +3,9 @@ package clashapi
 import (
 	"net/http"
 
+	"github.com/sagernet/sing-box/adapter"
 	E "github.com/sagernet/sing/common/exceptions"
+	"github.com/sagernet/sing/service"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
@@ -32,5 +34,13 @@ func updateExternalUI(server *Server) func(w http.ResponseWriter, r *http.Reques
 		}
 		server.logger.Info("updated external UI")
 		render.JSON(w, r, render.M{"status": "ok"})
+
+		cacheFile := service.FromContext[adapter.CacheFile](server.ctx)
+		if cacheFile != nil {
+			err := cacheFile.StoreUIUpdateTime(server.externalUI, nowTime(server.ctx))
+			if err != nil {
+				server.logger.Warn(E.Cause(err, "store UI update time"))
+			}
+		}
 	}
 }

@@ -60,6 +60,8 @@ type Server struct {
 	externalUI               string
 	externalUIDownloadURL    string
 	externalUIDownloadDetour string
+
+	externalUIUpdateInterval time.Duration
 }
 
 func NewServer(ctx context.Context, logFactory log.ObservableFactory, options option.ClashAPIOptions) (adapter.ClashServer, error) {
@@ -82,6 +84,8 @@ func NewServer(ctx context.Context, logFactory log.ObservableFactory, options op
 		externalController:       options.ExternalController != "",
 		externalUIDownloadURL:    options.ExternalUIDownloadURL,
 		externalUIDownloadDetour: options.ExternalUIDownloadDetour,
+
+		externalUIUpdateInterval: options.ExternalUIUpdateInterval.Build(),
 	}
 	s.urlTestHistory = service.FromContext[adapter.URLTestHistoryStorage](ctx)
 	if s.urlTestHistory == nil {

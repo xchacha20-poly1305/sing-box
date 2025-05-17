@@ -52,6 +52,20 @@ it will be rejected.
 
 拒绝未知 SNI：如果连接的 server name 与 `server_name` 不符 且 证书中不包含它，则拒绝连接。
 
+## Clash API
+
+```json
+{
+  "experimental": {
+    "clash_api": {
+      "external_ui_update_interval": "1d"
+    }
+  }
+}
+```
+
+`external_ui_update_interval`: Update interval of external UI. (Just check on start)
+
 ## License
 
 ```

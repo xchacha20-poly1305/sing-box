@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/sagernet/sing-box/adapter"
 	C "github.com/sagernet/sing-box/constant"
@@ -17,6 +18,7 @@ import (
 	E "github.com/sagernet/sing/common/exceptions"
 	M "github.com/sagernet/sing/common/metadata"
 	"github.com/sagernet/sing/common/ntp"
+	"github.com/sagernet/sing/service"
 	"github.com/sagernet/sing/service/filemanager"
 )
 
@@ -28,12 +30,42 @@ func (s *Server) checkAndDownloadExternalUI() {
 	if err != nil {
 		os.MkdirAll(s.externalUI, 0o755)
 	}
-	if len(entries) == 0 {
+	cacheFile := service.FromContext[adapter.CacheFile](s.ctx)
+	now := nowTime(s.ctx)
+	checkLastUpdateUI := func() bool {
+		if cacheFile == nil {
+			return true
+		}
+		lastUpdate := cacheFile.LoadUIUpdateTime(s.externalUI)
+		if lastUpdate.IsZero() {
+			return true
+		}
+		return now.Sub(lastUpdate) > s.externalUIUpdateInterval
+	}
+	shouldUpdateUI := len(entries) == 0 || checkLastUpdateUI()
+	if shouldUpdateUI {
 		err = s.downloadExternalUI()
 		if err != nil {
 			s.logger.Error("download external ui error: ", err)
+		} else {
+			if cacheFile != nil {
+				err := cacheFile.StoreUIUpdateTime(s.externalUI, now)
+				if err != nil {
+					s.logger.Warn(E.Cause(err, "store UI update time"))
+				}
+			}
 		}
 	}
+}
+
+func nowTime(ctx context.Context) (now time.Time) {
+	ntpService := service.FromContext[ntp.TimeService](ctx)
+	if ntpService != nil {
+		now = ntpService.TimeFunc()()
+	} else {
+		now = time.Now()
+	}
+	return
 }
 
 func (s *Server) downloadExternalUI() error {

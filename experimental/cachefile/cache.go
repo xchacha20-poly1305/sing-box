@@ -2,6 +2,7 @@ package cachefile
 
 import (
 	"context"
+	"encoding/binary"
 	"errors"
 	"net/netip"
 	"os"
@@ -24,12 +25,15 @@ var (
 	bucketMode     = []byte("clash_mode")
 	bucketRuleSet  = []byte("rule_set")
 
+	bucketUIUpdateTime = []byte("ui_update_time")
+
 	bucketNameList = []string{
 		string(bucketSelected),
 		string(bucketExpand),
 		string(bucketMode),
 		string(bucketRuleSet),
 		string(bucketRDRC),
+		string(bucketUIUpdateTime),
 	}
 
 	cacheIDDefault = []byte("default")
@@ -310,5 +314,34 @@ func (c *CacheFile) SaveRuleSet(tag string, set *adapter.SavedBinary) error {
 			return err
 		}
 		return bucket.Put([]byte(tag), setBinary)
+	})
+}
+
+func (c *CacheFile) LoadUIUpdateTime(uiDirectory string) (updateTime time.Time) {
+	_ = c.DB.View(func(t *bbolt.Tx) error {
+		bucket := c.bucket(t, bucketUIUpdateTime)
+		if bucket == nil {
+			return os.ErrNotExist
+		}
+		timeByte := bucket.Get([]byte(uiDirectory))
+		const uint64Size = 8
+		if len(timeByte) != uint64Size {
+			return os.ErrInvalid
+		}
+		unixTIme := binary.BigEndian.Uint64(timeByte)
+		updateTime = time.Unix(int64(unixTIme), 0)
+		return nil
+	})
+	return
+}
+
+func (c *CacheFile) StoreUIUpdateTime(uiDirectory string, updateTime time.Time) error {
+	return c.DB.Batch(func(t *bbolt.Tx) error {
+		bucket, err := c.createBucket(t, bucketUIUpdateTime)
+		if err != nil {
+			return err
+		}
+		unixTime := binary.BigEndian.AppendUint64(nil, uint64(updateTime.Unix()))
+		return bucket.Put([]byte(uiDirectory), unixTime)
 	})
 }

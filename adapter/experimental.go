@@ -54,6 +54,9 @@ type CacheFile interface {
 	StoreGroupExpand(group string, expand bool) error
 	LoadRuleSet(tag string) *SavedBinary
 	SaveRuleSet(tag string, set *SavedBinary) error
+
+	LoadUIUpdateTime(uiDirectory string) time.Time
+	StoreUIUpdateTime(uiDirectory string, updateTime time.Time) error
 }
 
 type SavedBinary struct {

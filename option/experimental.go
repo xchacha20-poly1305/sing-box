@@ -29,6 +29,8 @@ type ClashAPIOptions struct {
 	AccessControlAllowOrigin         badoption.Listable[string] `json:"access_control_allow_origin,omitempty"`
 	AccessControlAllowPrivateNetwork bool                       `json:"access_control_allow_private_network,omitempty"`
 
+	ExternalUIUpdateInterval badoption.Duration `json:"external_ui_update_interval,omitempty"`
+
 	// Deprecated: migrated to global cache file
 	CacheFile string `json:"cache_file,omitempty"`
 	// Deprecated: migrated to global cache file
