@@ -20,6 +20,7 @@ import (
 	"github.com/sagernet/sing/common/logger"
 	M "github.com/sagernet/sing/common/metadata"
 	N "github.com/sagernet/sing/common/network"
+	"github.com/sagernet/sing/service"
 
 	"github.com/miekg/dns"
 )
@@ -91,6 +92,13 @@ func NewRuleAction(ctx context.Context, logger logger.ContextLogger, action opti
 		}
 		return sniffAction, sniffAction.build()
 	case C.RuleActionTypeResolve:
+		if server := action.ResolveOptions.Server; server != "" {
+			transportManager := service.FromContext[adapter.DNSTransportManager](ctx)
+			_, loaded := transportManager.Transport(server)
+			if !loaded {
+				return nil, E.New("resolve: unknown DNS transport: ", server)
+			}
+		}
 		return &RuleActionResolve{
 			Server:       action.ResolveOptions.Server,
 			Strategy:     C.DomainStrategy(action.ResolveOptions.Strategy),
