@@ -130,11 +130,7 @@ func (c *CacheFile) Start(stage adapter.StartStage) error {
 	if err != nil {
 		return err
 	}
-	err = filemanager.Chown(c.ctx, c.path)
-	if err != nil {
-		db.Close()
-		return E.Cause(err, "platform chown")
-	}
+	_ = filemanager.Chown(c.ctx, c.path)
 	err = db.Batch(func(tx *bbolt.Tx) error {
 		return tx.ForEach(func(name []byte, b *bbolt.Bucket) error {
 			if name[0] == 0 {
