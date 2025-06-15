@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"os"
+	"slices"
 	"strings"
 	"sync"
 
@@ -208,7 +209,7 @@ func (m *TransportManager) Remove(tag string) error {
 	if index == -1 {
 		panic("invalid inbound index")
 	}
-	m.transports = append(m.transports[:index], m.transports[index+1:]...)
+	m.transports = slices.Delete(m.transports, index, index+1)
 	started := m.started
 	if m.defaultTransport == transport {
 		if len(m.transports) > 0 {
@@ -273,7 +274,7 @@ func (m *TransportManager) Create(ctx context.Context, logger log.ContextLogger,
 		if existsIndex == -1 {
 			panic("invalid inbound index")
 		}
-		m.transports = append(m.transports[:existsIndex], m.transports[existsIndex+1:]...)
+		m.transports = slices.Delete(m.transports, existsIndex, existsIndex+1)
 	}
 	m.transports = append(m.transports, transport)
 	m.transportByTag[tag] = transport

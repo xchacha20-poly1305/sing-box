@@ -3,6 +3,7 @@ package endpoint
 import (
 	"context"
 	"os"
+	"slices"
 	"sync"
 	"time"
 
@@ -112,7 +113,7 @@ func (m *Manager) Remove(tag string) error {
 	if index == -1 {
 		panic("invalid endpoint index")
 	}
-	m.endpoints = append(m.endpoints[:index], m.endpoints[index+1:]...)
+	m.endpoints = slices.Delete(m.endpoints, index, index+1)
 	started := m.started
 	m.access.Unlock()
 	if started {
@@ -153,7 +154,7 @@ func (m *Manager) Create(ctx context.Context, router adapter.Router, logger log.
 		if existsIndex == -1 {
 			panic("invalid endpoint index")
 		}
-		m.endpoints = append(m.endpoints[:existsIndex], m.endpoints[existsIndex+1:]...)
+		m.endpoints = slices.Delete(m.endpoints, existsIndex, existsIndex+1)
 	}
 	m.endpoints = append(m.endpoints, endpoint)
 	m.endpointByTag[tag] = endpoint

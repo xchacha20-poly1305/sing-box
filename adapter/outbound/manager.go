@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"os"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -234,7 +235,7 @@ func (m *Manager) Remove(tag string) error {
 	if index == -1 {
 		panic("invalid inbound index")
 	}
-	m.outbounds = append(m.outbounds[:index], m.outbounds[index+1:]...)
+	m.outbounds = slices.Delete(m.outbounds, index, index+1)
 	started := m.started
 	if m.defaultOutbound == outbound {
 		if len(m.outbounds) > 0 {
@@ -299,7 +300,7 @@ func (m *Manager) Create(ctx context.Context, router adapter.Router, logger log.
 		if existsIndex == -1 {
 			panic("invalid inbound index")
 		}
-		m.outbounds = append(m.outbounds[:existsIndex], m.outbounds[existsIndex+1:]...)
+		m.outbounds = slices.Delete(m.outbounds, existsIndex, existsIndex+1)
 	}
 	m.outbounds = append(m.outbounds, outbound)
 	m.outboundByTag[tag] = outbound
