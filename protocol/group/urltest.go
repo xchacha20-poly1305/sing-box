@@ -16,13 +16,14 @@ import (
 	"github.com/sagernet/sing-box/option"
 	"github.com/sagernet/sing-tun"
 	"github.com/sagernet/sing/common"
-	"github.com/sagernet/sing/common/batch"
 	E "github.com/sagernet/sing/common/exceptions"
 	M "github.com/sagernet/sing/common/metadata"
 	N "github.com/sagernet/sing/common/network"
 	"github.com/sagernet/sing/common/x/list"
 	"github.com/sagernet/sing/service"
 	"github.com/sagernet/sing/service/pause"
+
+	"golang.org/x/sync/errgroup"
 )
 
 func RegisterURLTest(registry *outbound.Registry) {
@@ -366,7 +367,8 @@ func (g *URLTestGroup) urlTest(ctx context.Context, force bool) (map[string]uint
 		return result, nil
 	}
 	defer g.checking.Store(false)
-	b, _ := batch.New(ctx, batch.WithConcurrencyNum[any](10))
+	errGroup, _ := errgroup.WithContext(ctx)
+	errGroup.SetLimit(10)
 	checked := make(map[string]bool)
 	var resultAccess sync.Mutex
 	for _, detour := range g.outbounds {
@@ -384,7 +386,7 @@ func (g *URLTestGroup) urlTest(ctx context.Context, force bool) (map[string]uint
 		if !loaded {
 			continue
 		}
-		b.Go(realTag, func() (any, error) {
+		errGroup.Go(func() error {
 			testCtx, cancel := context.WithTimeout(g.ctx, C.TCPTimeout)
 			defer cancel()
 			t, err := urltest.URLTest(testCtx, g.link, p)
@@ -401,10 +403,10 @@ func (g *URLTestGroup) urlTest(ctx context.Context, force bool) (map[string]uint
 				result[tag] = t
 				resultAccess.Unlock()
 			}
-			return nil, nil
+			return nil
 		})
 	}
-	b.Wait()
+	errGroup.Wait()
 	g.performUpdateCheck()
 	return result, nil
 }

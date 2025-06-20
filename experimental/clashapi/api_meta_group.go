@@ -12,11 +12,11 @@ import (
 	"github.com/sagernet/sing-box/common/urltest"
 	"github.com/sagernet/sing-box/protocol/group"
 	"github.com/sagernet/sing/common"
-	"github.com/sagernet/sing/common/batch"
 	"github.com/sagernet/sing/common/json/badjson"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
+	"golang.org/x/sync/errgroup"
 )
 
 func groupRouter(server *Server) http.Handler {
@@ -89,7 +89,8 @@ func getGroupDelay(server *Server) func(w http.ResponseWriter, r *http.Request) 
 				itOutbound, _ := server.outbound.Outbound(it)
 				return itOutbound
 			}))
-			b, _ := batch.New(ctx, batch.WithConcurrencyNum[any](10))
+			errGroup, _ := errgroup.WithContext(ctx)
+			errGroup.SetLimit(10)
 			checked := make(map[string]bool)
 			result = make(map[string]uint16)
 			var resultAccess sync.Mutex
@@ -104,7 +105,7 @@ func getGroupDelay(server *Server) func(w http.ResponseWriter, r *http.Request) 
 				if !loaded {
 					continue
 				}
-				b.Go(realTag, func() (any, error) {
+				errGroup.Go(func() error {
 					t, err := urltest.URLTest(ctx, url, p)
 					if err != nil {
 						server.logger.Debug("outbound ", tag, " unavailable: ", err)
@@ -119,10 +120,10 @@ func getGroupDelay(server *Server) func(w http.ResponseWriter, r *http.Request) 
 						result[tag] = t
 						resultAccess.Unlock()
 					}
-					return nil, nil
+					return nil
 				})
 			}
-			b.Wait()
+			errGroup.Wait()
 		}
 
 		if err != nil {
