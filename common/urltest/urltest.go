@@ -81,18 +81,38 @@ func URLTest(ctx context.Context, link string, detour N.Dialer) (t uint16, err e
 		return
 	}
 	hostname := linkURL.Hostname()
+	var isH3 bool
 	port := linkURL.Port()
-	if port == "" {
-		switch linkURL.Scheme {
-		case "http":
+	switch linkURL.Scheme {
+	case "http":
+		if port == "" {
 			port = "80"
-		case "https":
+		}
+	case "https":
+		if port == "" {
 			port = "443"
 		}
+	case "h3", "http3", "quic":
+		if !C.WithQUIC {
+			err = C.ErrQUICNotIncluded
+			return
+		}
+		if port == "" {
+			port = "443"
+		}
+		isH3 = true
+		linkURL.Scheme = "https"
+		link = linkURL.String()
 	}
 
 	start := time.Now()
-	instance, err := detour.DialContext(ctx, "tcp", M.ParseSocksaddrHostPortStr(hostname, port))
+	var network string
+	if isH3 {
+		network = N.NetworkUDP
+	} else {
+		network = N.NetworkTCP
+	}
+	instance, err := detour.DialContext(ctx, network, M.ParseSocksaddrHostPortStr(hostname, port))
 	if err != nil {
 		return
 	}
@@ -104,20 +124,28 @@ func URLTest(ctx context.Context, link string, detour N.Dialer) (t uint16, err e
 	if err != nil {
 		return
 	}
+	tlsConfig := &tls.Config{
+		Time:    ntp.TimeFuncFromContext(ctx),
+		RootCAs: adapter.RootPoolFromContext(ctx),
+	}
+	var transport http.RoundTripper
+	if isH3 {
+		transport = http3Transport(instance, tlsConfig)
+	} else {
+		transport = httpTransport(instance, tlsConfig)
+	}
+	var timeout time.Duration
+	if isH3 {
+		timeout = C.ProtocolTimeouts[C.ProtocolQUIC]
+	} else {
+		timeout = C.TCPTimeout
+	}
 	client := http.Client{
-		Transport: &http.Transport{
-			DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
-				return instance, nil
-			},
-			TLSClientConfig: &tls.Config{
-				Time:    ntp.TimeFuncFromContext(ctx),
-				RootCAs: adapter.RootPoolFromContext(ctx),
-			},
-		},
+		Transport: transport,
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
 		},
-		Timeout: C.TCPTimeout,
+		Timeout: timeout,
 	}
 	defer client.CloseIdleConnections()
 	resp, err := client.Do(req.WithContext(ctx))
@@ -127,4 +155,13 @@ func URLTest(ctx context.Context, link string, detour N.Dialer) (t uint16, err e
 	resp.Body.Close()
 	t = uint16(time.Since(start) / time.Millisecond)
 	return
+}
+
+func httpTransport(conn net.Conn, tlsConfig *tls.Config) http.RoundTripper {
+	return &http.Transport{
+		DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
+			return conn, nil
+		},
+		TLSClientConfig: tlsConfig,
+	}
 }
