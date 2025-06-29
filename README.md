@@ -98,6 +98,10 @@ For extended features
 
 - Providers: [中文](./docs/configuration/provider/index.zh.md), [English](./docs/configuration/provider/index.md)
 
+## URLTest
+
+Can use http3 (URL scheme: `quic` `http3` `h3`).
+
 ## License
 
 ```
