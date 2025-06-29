@@ -114,6 +114,10 @@ For extended features
 
 * `udp_over_tcp`: UDP over TCP field.
 
+## URLTest
+
+Can use http3 (URL scheme: `quic` `http3` `h3`).
+
 ## License
 
 ```
