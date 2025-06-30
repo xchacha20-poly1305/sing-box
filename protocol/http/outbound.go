@@ -4,6 +4,7 @@ import (
 	"context"
 	"net"
 	"os"
+	"strings"
 
 	"github.com/sagernet/sing-box/adapter"
 	"github.com/sagernet/sing-box/adapter/outbound"
@@ -16,6 +17,7 @@ import (
 	"github.com/sagernet/sing/common/logger"
 	M "github.com/sagernet/sing/common/metadata"
 	N "github.com/sagernet/sing/common/network"
+	"github.com/sagernet/sing/common/uot"
 	sHTTP "github.com/sagernet/sing/protocol/http"
 )
 
@@ -27,6 +29,8 @@ type Outbound struct {
 	outbound.Adapter
 	logger logger.ContextLogger
 	client *sHTTP.Client
+
+	uotClient *uot.Client
 }
 
 func NewOutbound(ctx context.Context, router adapter.Router, logger log.ContextLogger, tag string, options option.HTTPOutboundOptions) (adapter.Outbound, error) {
@@ -38,9 +42,8 @@ func NewOutbound(ctx context.Context, router adapter.Router, logger log.ContextL
 	if err != nil {
 		return nil, err
 	}
-	return &Outbound{
-		Adapter: outbound.NewAdapterWithDialerOptions(C.TypeHTTP, tag, []string{N.NetworkTCP}, options.DialerOptions),
-		logger:  logger,
+	httpOutbound := &Outbound{
+		logger: logger,
 		client: sHTTP.NewClient(sHTTP.Options{
 			Dialer:   detour,
 			Server:   options.ServerOptions.Build(),
@@ -49,17 +52,39 @@ func NewOutbound(ctx context.Context, router adapter.Router, logger log.ContextL
 			Path:     options.Path,
 			Headers:  options.Headers.Build(),
 		}),
-	}, nil
+	}
+	networks := []string{N.NetworkTCP}
+	uotOptions := common.PtrValueOrDefault(options.UDPOverTCP)
+	if uotOptions.Enabled {
+		httpOutbound.uotClient = &uot.Client{
+			Dialer:  httpOutbound.client,
+			Version: uotOptions.Version,
+		}
+		networks = append(networks, N.NetworkUDP)
+	}
+	httpOutbound.Adapter = outbound.NewAdapterWithDialerOptions(C.TypeHTTP, tag, networks, options.DialerOptions)
+	return httpOutbound, nil
 }
 
 func (h *Outbound) DialContext(ctx context.Context, network string, destination M.Socksaddr) (net.Conn, error) {
 	ctx, metadata := adapter.ExtendContext(ctx)
 	metadata.Outbound = h.Tag()
 	metadata.Destination = destination
+	if h.uotClient != nil && strings.HasPrefix(network, N.NetworkUDP) {
+		h.logger.InfoContext(ctx, "outbound UoT connection to ", destination)
+		return h.uotClient.DialContext(ctx, network, destination)
+	}
 	h.logger.InfoContext(ctx, "outbound connection to ", destination)
 	return h.client.DialContext(ctx, network, destination)
 }
 
 func (h *Outbound) ListenPacket(ctx context.Context, destination M.Socksaddr) (net.PacketConn, error) {
-	return nil, os.ErrInvalid
+	if h.uotClient == nil {
+		return nil, os.ErrInvalid
+	}
+	ctx, metadata := adapter.ExtendContext(ctx)
+	metadata.Outbound = h.Tag()
+	metadata.Destination = destination
+	h.logger.InfoContext(ctx, "outbound UoT packet connection to ", destination)
+	return h.uotClient.ListenPacket(ctx, destination)
 }
