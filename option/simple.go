@@ -37,4 +37,6 @@ type HTTPOutboundOptions struct {
 	OutboundTLSOptionsContainer
 	Path    string               `json:"path,omitempty"`
 	Headers badoption.HTTPHeader `json:"headers,omitempty"`
+
+	UDPOverTCP *UDPOverTCPOptions `json:"udp_over_tcp,omitempty"`
 }

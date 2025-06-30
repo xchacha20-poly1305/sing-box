@@ -66,6 +66,22 @@ it will be rejected.
 
 `external_ui_update_interval`: Update interval of external UI. (Just check on start)
 
+## HTTP
+
+```json5
+{
+  "outbounds": [
+     {
+       "type": "http",
+        "tag": "http-out",
+        "udp_over_tcp": {} // or true
+     }
+  ]
+}
+```
+
+* `udp_over_tcp`: UDP over TCP field.
+
 ## License
 
 ```
