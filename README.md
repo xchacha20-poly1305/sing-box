@@ -98,6 +98,22 @@ For extended features
 
 - Providers: [中文](./docs/configuration/provider/index.zh.md), [English](./docs/configuration/provider/index.md)
 
+## HTTP
+
+```json5
+{
+  "outbounds": [
+     {
+       "type": "http",
+        "tag": "http-out",
+        "udp_over_tcp": {} // or true
+     }
+  ]
+}
+```
+
+* `udp_over_tcp`: UDP over TCP field.
+
 ## License
 
 ```
