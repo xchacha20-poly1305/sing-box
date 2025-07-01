@@ -7,6 +7,7 @@ import (
 	"net/netip"
 	"os"
 	"runtime"
+	"slices"
 	"strings"
 	"sync"
 	"syscall"
@@ -28,8 +29,6 @@ import (
 	"github.com/sagernet/sing/common/winpowrprof"
 	"github.com/sagernet/sing/service"
 	"github.com/sagernet/sing/service/pause"
-
-	"golang.org/x/exp/slices"
 )
 
 var _ adapter.NetworkManager = (*NetworkManager)(nil)

@@ -9,8 +9,7 @@ package ja3
 import (
 	"crypto/md5"
 	"encoding/hex"
-
-	"golang.org/x/exp/slices"
+	"slices"
 )
 
 type ClientHello struct {

@@ -5,11 +5,10 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/sagernet/sing-box/log"
-
-	"golang.org/x/exp/slices"
 )
 
 func main() {
