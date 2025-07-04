@@ -22,6 +22,7 @@ import (
 	mRand "math/rand"
 	"net"
 	"net/http"
+	"net/url"
 	"reflect"
 	"strings"
 	"time"
@@ -51,6 +52,8 @@ type RealityClientConfig struct {
 	uClient   *UTLSClientConfig
 	publicKey []byte
 	shortID   [8]byte
+
+	spiderX string
 }
 
 func NewRealityClient(ctx context.Context, logger logger.ContextLogger, serverAddress string, options option.OutboundTLSOptions) (Config, error) {
@@ -79,7 +82,7 @@ func NewRealityClient(ctx context.Context, logger logger.ContextLogger, serverAd
 		return nil, E.New("invalid short_id")
 	}
 
-	var config Config = &RealityClientConfig{ctx, uClient.(*UTLSClientConfig), publicKey, shortID}
+	var config Config = &RealityClientConfig{ctx, uClient.(*UTLSClientConfig), publicKey, shortID, options.Reality.SpiderX}
 	if options.KernelRx || options.KernelTx {
 		if !C.IsLinux {
 			return nil, E.New("kTLS is only supported on Linux")
@@ -221,14 +224,14 @@ func (e *RealityClientConfig) ClientHandshake(ctx context.Context, conn net.Conn
 	}
 
 	if !verifier.verified {
-		go realityClientFallback(e.ctx, uConn, e.uClient.ServerName(), e.uClient.id)
+		go realityClientFallback(e.ctx, uConn, e.uClient.ServerName(), e.uClient.id, e.spiderX)
 		return nil, E.New("reality verification failed")
 	}
 
 	return &realityClientConnWrapper{uConn}, nil
 }
 
-func realityClientFallback(ctx context.Context, uConn net.Conn, serverName string, fingerprint utls.ClientHelloID) {
+func realityClientFallback(ctx context.Context, uConn net.Conn, serverName string, fingerprint utls.ClientHelloID, spiderX string) {
 	defer uConn.Close()
 	client := &http.Client{
 		Transport: &http2.Transport{
@@ -241,7 +244,12 @@ func realityClientFallback(ctx context.Context, uConn net.Conn, serverName strin
 			},
 		},
 	}
-	request, _ := http.NewRequest("GET", "https://"+serverName, nil)
+	requestUrl := url.URL{
+		Scheme: "https",
+		Host:   serverName,
+		Path:   spiderX,
+	}
+	request, _ := http.NewRequest(http.MethodGet, requestUrl.String(), nil)
 	request.Header.Set("User-Agent", fingerprint.Client)
 	request.AddCookie(&http.Cookie{Name: "padding", Value: strings.Repeat("0", mRand.Intn(32)+30)})
 	response, err := client.Do(request)
@@ -258,6 +266,8 @@ func (e *RealityClientConfig) Clone() Config {
 		e.uClient.Clone().(*UTLSClientConfig),
 		e.publicKey,
 		e.shortID,
+
+		e.spiderX,
 	}
 }
 

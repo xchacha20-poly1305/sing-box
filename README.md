@@ -71,11 +71,11 @@ it will be rejected.
 ```json5
 {
   "outbounds": [
-     {
-       "type": "http",
-        "tag": "http-out",
-        "udp_over_tcp": {} // or true
-     }
+    {
+      "type": "http",
+      "tag": "http-out",
+      "udp_over_tcp": {} // or true
+    }
   ]
 }
 ```
@@ -85,6 +85,28 @@ it will be rejected.
 ## URLTest
 
 Can use http3 (URL scheme: `quic` `http3` `h3`).
+
+## REALITY
+
+```json
+{
+  "outbounds": [
+    {
+      "type": "vless",
+      "tag": "vless-out",
+      "tls": {
+        "enabled": true,
+        "reality": {
+          "enabled": true,
+          "spider_x": "/rss.xml"
+        }
+      }
+    }
+  ]
+}
+```
+
+Add `spider_x` and update hard-coded Xray version.
 
 ## License
 
