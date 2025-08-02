@@ -8,6 +8,7 @@ import (
 	"github.com/sagernet/sing-box/adapter"
 	"github.com/sagernet/sing-box/adapter/inbound"
 	"github.com/sagernet/sing-box/common/listener"
+	"github.com/sagernet/sing-box/common/speedtest"
 	"github.com/sagernet/sing-box/common/tls"
 	"github.com/sagernet/sing-box/common/uot"
 	C "github.com/sagernet/sing-box/constant"
@@ -59,7 +60,7 @@ func NewInbound(ctx context.Context, router adapter.Router, logger log.ContextLo
 	inbound := &Inbound{
 		Adapter: inbound.NewAdapter(C.TypeHTTP, tag),
 		ctx:     ctx,
-		router:  uot.NewRouter(router, logger),
+		router:  uot.NewRouter(speedtest.NewRouter(router, logger, speedtest.ParseHandleOption(options.SpeedTest)), logger),
 		logger:  logger,
 		server: http.NewServer(http.ServerOptions{
 			Authenticator: auth.NewAuthenticator(options.Users),
