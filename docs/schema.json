@@ -6950,6 +6950,9 @@
               "additionalProperties": {
                 "$ref": "#/$defs/ServerOptions"
               }
+            },
+            "speed_test": {
+              "type": "string"
             }
           },
           "required": [
@@ -7313,6 +7316,9 @@
             },
             "tls": {
               "$ref": "#/$defs/InboundTLSOptions"
+            },
+            "speed_test": {
+              "type": "string"
             },
             "idle_timeout": {
               "$ref": "#/$defs/Duration"
@@ -7765,6 +7771,9 @@
             },
             "realm": {
               "$ref": "#/$defs/Hysteria2InboundRealm"
+            },
+            "speed_test": {
+              "type": "string"
             }
           },
           "required": [
@@ -7862,6 +7871,9 @@
             },
             "tls": {
               "$ref": "#/$defs/InboundTLSOptions"
+            },
+            "speed_test": {
+              "type": "string"
             }
           },
           "required": [
@@ -8211,6 +8223,9 @@
               ]
             },
             "obfs_host": {
+              "type": "string"
+            },
+            "speed_test": {
               "type": "string"
             }
           },
@@ -8646,6 +8661,9 @@
             },
             "domain_resolver": {
               "$ref": "#/$defs/DomainResolver"
+            },
+            "speed_test": {
+              "type": "string"
             }
           },
           "required": [
@@ -9096,6 +9114,9 @@
             },
             "transport": {
               "$ref": "#/$defs/V2RayTransport"
+            },
+            "speed_test": {
+              "type": "string"
             }
           },
           "required": [
@@ -9241,6 +9262,9 @@
             },
             "disable_path_mtu_discovery": {
               "type": "boolean"
+            },
+            "speed_test": {
+              "type": "string"
             }
           },
           "required": [
@@ -9732,6 +9756,9 @@
             },
             "transport": {
               "$ref": "#/$defs/V2RayTransport"
+            },
+            "speed_test": {
+              "type": "string"
             }
           },
           "required": [
@@ -9829,6 +9856,9 @@
             },
             "transport": {
               "$ref": "#/$defs/V2RayTransport"
+            },
+            "speed_test": {
+              "type": "string"
             }
           },
           "required": [
