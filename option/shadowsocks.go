@@ -11,6 +11,8 @@ type ShadowsocksInboundOptions struct {
 	Managed      bool                     `json:"managed,omitempty"`
 	ObfsMode     string                   `json:"obfs_mode,omitempty" enum:"http,tls"`
 	ObfsHost     string                   `json:"obfs_host,omitempty"`
+
+	SpeedTest string `json:"speed_test,omitempty"`
 }
 
 type ShadowsocksUser struct {
