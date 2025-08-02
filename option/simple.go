@@ -9,6 +9,8 @@ type SocksInboundOptions struct {
 	ListenOptions
 	Users          []auth.User           `json:"users,omitempty"`
 	DomainResolver *DomainResolveOptions `json:"domain_resolver,omitempty"`
+
+	SpeedTest string `json:"speed_test,omitempty"`
 }
 
 type HTTPMixedInboundOptions struct {
@@ -17,6 +19,8 @@ type HTTPMixedInboundOptions struct {
 	DomainResolver *DomainResolveOptions `json:"domain_resolver,omitempty"`
 	SetSystemProxy bool                  `json:"set_system_proxy,omitempty"`
 	InboundTLSOptionsContainer
+
+	SpeedTest string `json:"speed_test,omitempty"`
 }
 
 type SOCKSOutboundOptions struct {

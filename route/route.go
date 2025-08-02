@@ -10,6 +10,7 @@ import (
 
 	"github.com/sagernet/sing-box/adapter"
 	"github.com/sagernet/sing-box/common/sniff"
+	"github.com/sagernet/sing-box/common/speedtest"
 	C "github.com/sagernet/sing-box/constant"
 	"github.com/sagernet/sing-box/log"
 	R "github.com/sagernet/sing-box/route/rule"
@@ -98,6 +99,8 @@ func (r *Router) routeConnection(ctx context.Context, conn net.Conn, metadata ad
 		return E.New("global UoT not supported since sing-box v1.7.0.")
 	case uot.LegacyMagicAddress:
 		return E.New("global UoT (legacy) not supported since sing-box v1.7.0.")
+	case speedtest.MagicAddress:
+		return E.New("invalid speedtest request")
 	}
 	if metadata.InboundType == C.TypeTun && metadata.Protocol == C.ProtocolDNS {
 		N.CloseOnHandshakeFailure(conn, onClose, r.hijackDNSStream(ctx, conn, metadata))
