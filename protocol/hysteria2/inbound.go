@@ -11,6 +11,7 @@ import (
 	"github.com/sagernet/sing-box/adapter"
 	"github.com/sagernet/sing-box/adapter/inbound"
 	"github.com/sagernet/sing-box/common/listener"
+	"github.com/sagernet/sing-box/common/speedtest"
 	"github.com/sagernet/sing-box/common/tls"
 	C "github.com/sagernet/sing-box/constant"
 	"github.com/sagernet/sing-box/log"
@@ -30,7 +31,7 @@ func RegisterInbound(registry *inbound.Registry) {
 
 type Inbound struct {
 	inbound.Adapter
-	router       adapter.Router
+	router       adapter.ConnectionRouterEx
 	logger       log.ContextLogger
 	listener     *listener.Listener
 	tlsConfig    tls.ServerConfig
@@ -98,7 +99,7 @@ func NewInbound(ctx context.Context, router adapter.Router, logger log.ContextLo
 	}
 	inbound := &Inbound{
 		Adapter: inbound.NewAdapter(C.TypeHysteria2, tag),
-		router:  router,
+		router:  speedtest.NewRouter(router, logger, speedtest.ParseHandleOption(options.SpeedTest)),
 		logger:  logger,
 		listener: listener.New(listener.Options{
 			Context: ctx,

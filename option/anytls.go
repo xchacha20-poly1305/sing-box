@@ -7,6 +7,8 @@ type AnyTLSInboundOptions struct {
 	InboundTLSOptionsContainer
 	Users         []AnyTLSUser               `json:"users,omitempty"`
 	PaddingScheme badoption.Listable[string] `json:"padding_scheme,omitempty"`
+
+	SpeedTest string `json:"speed_test,omitempty"`
 }
 
 type AnyTLSUser struct {

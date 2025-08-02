@@ -20,6 +20,8 @@ type Hysteria2InboundOptions struct {
 	InboundTLSOptionsContainer
 	Masquerade  *Hysteria2Masquerade `json:"masquerade,omitempty"`
 	BrutalDebug bool                 `json:"brutal_debug,omitempty"`
+
+	SpeedTest string `json:"speed_test,omitempty"`
 }
 
 type Hysteria2Obfs struct {

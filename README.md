@@ -130,6 +130,53 @@ Can use http3 (URL scheme: `quic` `http3` `h3`).
 
 Add `spider_x` and update hard-coded Xray version.
 
+## DNS
+
+### TCP
+
+```json
+{
+  "dns": {
+    "servers": [
+      {
+        "type": "tcp",
+        "tag": "cloudlfare-tcp",
+        "server": "1.1.1.1",
+        "server_port": "53",
+        "reuse": true
+      }
+    ]
+  }
+}
+```
+
+- `reuse`: Reuse TCP connection.
+
+## Speedtest
+
+A speedtest protocol invited by Hysteria 2. However, to adapt sing-box framework, we change the destination address.
+
+Client:
+
+```shell
+sing-box -c config.json tools speedtest --outbound "proxy"
+```
+
+Server:
+
+Supported: AnyTLS, HTTP, Hysteria2, mixed, shadowsocks, socks, trojan, TUIC, VLESS, VMess.
+
+```json
+{
+  "inbounds": [
+    {
+      "type": "anytls",
+      "speedtest": "allow"
+    }
+  ]
+}
+```
+
 ## License
 
 ```
