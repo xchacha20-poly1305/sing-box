@@ -9,6 +9,7 @@ import (
 	"github.com/sagernet/sing-box/adapter/inbound"
 	"github.com/sagernet/sing-box/common/listener"
 	"github.com/sagernet/sing-box/common/mux"
+	"github.com/sagernet/sing-box/common/speedtest"
 	"github.com/sagernet/sing-box/common/tls"
 	C "github.com/sagernet/sing-box/constant"
 	"github.com/sagernet/sing-box/log"
@@ -45,7 +46,7 @@ type Inbound struct {
 func NewInbound(ctx context.Context, router adapter.Router, logger log.ContextLogger, tag string, options option.TrojanInboundOptions) (adapter.Inbound, error) {
 	inbound := &Inbound{
 		Adapter: inbound.NewAdapter(C.TypeTrojan, tag),
-		router:  router,
+		router:  speedtest.NewRouter(router, logger, speedtest.ParseHandleOption(options.SpeedTest)),
 		logger:  logger,
 		users:   options.Users,
 	}

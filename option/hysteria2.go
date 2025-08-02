@@ -25,6 +25,8 @@ type Hysteria2InboundOptions struct {
 	BBRProfile  string                 `json:"bbr_profile,omitempty" enum:"standard,conservative,aggressive"`
 	BrutalDebug bool                   `json:"brutal_debug,omitempty"`
 	Realm       *Hysteria2InboundRealm `json:"realm,omitempty"`
+
+	SpeedTest string `json:"speed_test,omitempty"`
 }
 
 type Hysteria2Realm struct {

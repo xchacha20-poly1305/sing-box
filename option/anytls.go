@@ -9,6 +9,8 @@ type AnyTLSInboundOptions struct {
 	PaddingScheme   badoption.Listable[string] `json:"padding_scheme,omitempty"`
 	Fallback        *ServerOptions             `json:"fallback,omitempty"`
 	FallbackForALPN map[string]*ServerOptions  `json:"fallback_for_alpn,omitempty"`
+
+	SpeedTest string `json:"speed_test,omitempty"`
 }
 
 type AnyTLSUser struct {
