@@ -16,7 +16,7 @@ require (
 	github.com/libdns/cloudflare v0.2.2-0.20250708034226-c574dccb31a6
 	github.com/logrusorgru/aurora v2.0.3+incompatible
 	github.com/metacubex/tfo-go v0.0.0-20241231083714-66613d49c422
-	github.com/metacubex/utls v1.8.0
+	github.com/metacubex/utls v1.8.1-0.20250811145843-49b4f106169a
 	github.com/mholt/acmez/v3 v3.1.2
 	github.com/miekg/dns v1.1.67
 	github.com/oschwald/maxminddb-golang v1.13.1
@@ -56,6 +56,8 @@ require (
 )
 
 //replace github.com/sagernet/sing => ../sing
+
+replace github.com/sagernet/sing-vmess => github.com/xchacha20-poly1305/sing-vmess v0.2.7-0.20250815084616-32f54465490f
 
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect

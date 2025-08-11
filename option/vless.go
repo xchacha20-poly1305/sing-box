@@ -6,6 +6,8 @@ type VLESSInboundOptions struct {
 	InboundTLSOptionsContainer
 	Multiplex *InboundMultiplexOptions `json:"multiplex,omitempty"`
 	Transport *V2RayTransportOptions   `json:"transport,omitempty"`
+
+	Decryption string `json:"decryption,omitempty"`
 }
 
 type VLESSUser struct {
@@ -24,4 +26,6 @@ type VLESSOutboundOptions struct {
 	Multiplex      *OutboundMultiplexOptions `json:"multiplex,omitempty"`
 	Transport      *V2RayTransportOptions    `json:"transport,omitempty"`
 	PacketEncoding *string                   `json:"packet_encoding,omitempty"`
+
+	Encryption string `json:"encryption,omitempty"`
 }

@@ -8,6 +8,16 @@ The universal proxy platform.
 
 https://sing-box.sagernet.org
 
+## VLESS
+
+Server: Write `decryption`.
+
+Client: Write `encryption`.
+
+Generate key pair: `sing-box generate vless-mlkem768`.
+
+For more information, see <https://github.com/XTLS/Xray-core/pull/4952>
+
 ## License
 
 ```
