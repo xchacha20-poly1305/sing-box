@@ -302,6 +302,14 @@ func (c *realityClientConnWrapper) Upstream() any {
 	return c.UConn
 }
 
+func (c *realityClientConnWrapper) ReaderReplaceable() bool {
+	return true
+}
+
+func (c *realityClientConnWrapper) WriterReplaceable() bool {
+	return true
+}
+
 // Due to low implementation quality, the reality server intercepted half close and caused memory leaks.
 // We fixed it by calling Close() directly.
 func (c *realityClientConnWrapper) CloseWrite() error {
