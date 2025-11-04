@@ -186,6 +186,9 @@ type RawDefaultRule struct {
 	DomainMatchStrategy      DomainMatchStrategy                                                         `json:"domain_match_strategy,omitempty"`
 	Invert                   bool                                                                        `json:"invert,omitempty"`
 
+	TimeRange badoption.Listable[TimeRange] `json:"time_range,omitempty"`
+	TimeZone  string                        `json:"time_zone,omitempty"`
+
 	// Deprecated: renamed to rule_set_ip_cidr_match_source
 	Deprecated_RulesetIPCIDRMatchSource bool `json:"rule_set_ipcidr_match_source,omitempty" schema:"omit"`
 }
