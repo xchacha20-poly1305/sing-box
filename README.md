@@ -208,6 +208,25 @@ _Note: Not support pin sha256_
 }
 ```
 
+## Rule
+
+```json5
+{
+  "route": {
+    "rules": {
+      "time_range": [
+        "12:00:00-14:00:00",
+        "22:00:00-07:00:00", // Can cross a day.
+      ],
+      "time_zone": "Asia/Shanghai"
+    }
+  }
+}
+```
+
+- `time_range` Listable. This function can restrict your kids' internet access.
+- `time_zone` Time zone for `time_range`. List see <https://en.wikipedia.org/wiki/List_of_tz_database_time_zones#List>. If empty, the behavior is nearly undefined.(Usually uses local or UTC)
+
 ## License
 
 ```
