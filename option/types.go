@@ -2,6 +2,7 @@ package option
 
 import (
 	"strings"
+	"time"
 
 	C "github.com/sagernet/sing-box/constant"
 	E "github.com/sagernet/sing/common/exceptions"
@@ -192,5 +193,42 @@ func (t *InterfaceType) UnmarshalJSON(content []byte) error {
 		return E.New("unknown interface type: ", value)
 	}
 	*t = InterfaceType(interfaceType)
+	return nil
+}
+
+type TimeRange struct {
+	Start, End time.Time
+}
+
+func (t TimeRange) String() string {
+	return F.ToString(t.Start.Format(time.TimeOnly), "-", t.End.Format(time.TimeOnly))
+}
+
+func (t TimeRange) MarshalJSON() ([]byte, error) {
+	return json.Marshal(t.String())
+}
+
+func (t *TimeRange) UnmarshalJSON(content []byte) error {
+	var value string
+	err := json.Unmarshal(content, &value)
+	if err != nil {
+		return err
+	}
+	start, end, loaded := strings.Cut(value, "-")
+	if !loaded {
+		return E.New("invalid time range: ", value)
+	}
+	startTime, err := time.Parse(time.TimeOnly, start)
+	if err != nil {
+		return E.Cause(err, "start time")
+	}
+	endTime, err := time.Parse(time.TimeOnly, end)
+	if err != nil {
+		return E.Cause(err, "end time")
+	}
+	*t = TimeRange{
+		Start: startTime,
+		End:   endTime,
+	}
 	return nil
 }
