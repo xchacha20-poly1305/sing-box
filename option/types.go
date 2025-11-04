@@ -4,6 +4,7 @@ import (
 	"maps"
 	"slices"
 	"strings"
+	"time"
 
 	C "github.com/sagernet/sing-box/constant"
 	"github.com/sagernet/sing-box/schema"
@@ -291,5 +292,48 @@ func (s *DomainMatchStrategy) UnmarshalJSON(bytes []byte) error {
 func (s DomainMatchStrategy) DescribeSchema(builder schema.Builder) (*schema.Node, error) {
 	return builder.Define("DomainMatchStrategy", func() (*schema.Node, error) {
 		return schema.StringEnum("", "as_is", "prefer_fqdn", "prefer_sniffhost", "fqdn_only", "sniffhost_only"), nil
+	})
+}
+
+type TimeRange struct {
+	Start, End time.Time
+}
+
+func (t TimeRange) String() string {
+	return F.ToString(t.Start.Format(time.TimeOnly), "-", t.End.Format(time.TimeOnly))
+}
+
+func (t TimeRange) MarshalJSON() ([]byte, error) {
+	return json.Marshal(t.String())
+}
+
+func (t *TimeRange) UnmarshalJSON(content []byte) error {
+	var value string
+	err := json.Unmarshal(content, &value)
+	if err != nil {
+		return err
+	}
+	start, end, loaded := strings.Cut(value, "-")
+	if !loaded {
+		return E.New("invalid time range: ", value)
+	}
+	startTime, err := time.Parse(time.TimeOnly, start)
+	if err != nil {
+		return E.Cause(err, "start time")
+	}
+	endTime, err := time.Parse(time.TimeOnly, end)
+	if err != nil {
+		return E.Cause(err, "end time")
+	}
+	*t = TimeRange{
+		Start: startTime,
+		End:   endTime,
+	}
+	return nil
+}
+
+func (t TimeRange) DescribeSchema(builder schema.Builder) (*schema.Node, error) {
+	return builder.Define("TimeRange", func() (*schema.Node, error) {
+		return schema.StringNode(), nil
 	})
 }
