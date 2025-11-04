@@ -11903,6 +11903,22 @@
             },
             "invert": {
               "type": "boolean"
+            },
+            "time_range": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/TimeRange"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/TimeRange"
+                  }
+                }
+              ]
+            },
+            "time_zone": {
+              "type": "string"
             }
           },
           "additionalProperties": false
@@ -18893,6 +18909,22 @@
                 },
                 "invert": {
                   "type": "boolean"
+                },
+                "time_range": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/TimeRange"
+                    },
+                    {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/$defs/TimeRange"
+                      }
+                    }
+                  ]
+                },
+                "time_zone": {
+                  "type": "string"
                 }
               }
             },
@@ -21317,6 +21349,9 @@
         }
       },
       "additionalProperties": false
+    },
+    "TimeRange": {
+      "type": "string"
     },
     "TrojanUser": {
       "type": "object",
