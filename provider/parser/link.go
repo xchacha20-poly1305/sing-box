@@ -38,6 +38,8 @@ func ParseSubscriptionLink(link string) (option.Outbound, error) {
 		return parseHysteria2Link(link)
 	case "anytls":
 		return parseAnyTLSLink(link)
+	case "juicity":
+		return parseJuicity(link)
 	}
 	result[3], _ = DecodeBase64URLSafe(result[3])
 	link = strings.Join(result[1:], "")
@@ -711,6 +713,48 @@ func parseAnyTLSLink(link string) (option.Outbound, error) {
 		Tag:  linkURL.Fragment,
 	}
 	options.TLS = &TLSOptions
+	outbound.Options = &options
+	return outbound, nil
+}
+
+func parseJuicity(link string) (option.Outbound, error) {
+	linkURL, err := url.Parse(link)
+	if err != nil {
+		return option.Outbound{}, err
+	}
+	if linkURL.User == nil || linkURL.User.Username() == "" {
+		return option.Outbound{}, E.New("missing password")
+	}
+	var options option.JuicityOutboundOptions
+	tlsOptions := option.OutboundTLSOptions{
+		Enabled: true,
+		ECH:     &option.OutboundECHOptions{},
+		UTLS:    &option.OutboundUTLSOptions{},
+		Reality: &option.OutboundRealityOptions{},
+	}
+	options.Server = linkURL.Hostname()
+	tlsOptions.ServerName = linkURL.Hostname()
+	options.ServerPort = StringToType[uint16](linkURL.Port())
+	options.UUID = linkURL.User.Username()
+	options.Password, _ = linkURL.User.Password()
+	for key, values := range linkURL.Query() {
+		value := values[0]
+		switch key {
+		case "insecure":
+			if value == "1" || value == "true" {
+				tlsOptions.Insecure = true
+			}
+		case "sni":
+			tlsOptions.ServerName = value
+		case "congestion_control":
+		case "pinned_certchain_sha256":
+		}
+	}
+	outbound := option.Outbound{
+		Type: C.TypeJuicity,
+		Tag:  linkURL.Fragment,
+	}
+	options.TLS = &tlsOptions
 	outbound.Options = &options
 	return outbound, nil
 }
