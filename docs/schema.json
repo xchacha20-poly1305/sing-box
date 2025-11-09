@@ -9896,6 +9896,9 @@
             },
             "speed_test": {
               "type": "string"
+            },
+            "decryption": {
+              "type": "string"
             }
           },
           "required": [
@@ -17115,6 +17118,9 @@
               "$ref": "#/$defs/V2RayTransport"
             },
             "packet_encoding": {
+              "type": "string"
+            },
+            "encryption": {
               "type": "string"
             }
           },
