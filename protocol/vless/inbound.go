@@ -59,7 +59,10 @@ func NewInbound(ctx context.Context, router adapter.Router, logger log.ContextLo
 	if err != nil {
 		return nil, err
 	}
-	service := vless.NewService[int](logger, adapter.NewUpstreamContextHandler(inbound.newConnectionEx, inbound.newPacketConnectionEx))
+	service, err := vless.NewService[int](ctx, options.Decryption, logger, adapter.NewUpstreamContextHandler(inbound.newConnectionEx, inbound.newPacketConnectionEx))
+	if err != nil {
+		return nil, err
+	}
 	service.UpdateUsers(common.MapIndexed(inbound.users, func(index int, _ option.VLESSUser) int {
 		return index
 	}), common.Map(inbound.users, func(it option.VLESSUser) string {
@@ -105,6 +108,12 @@ func (h *Inbound) Start(stage adapter.StartStage) error {
 	}
 	if h.tlsConfig != nil {
 		err := h.tlsConfig.Start()
+		if err != nil {
+			return err
+		}
+	}
+	if h.service != nil {
+		err := h.service.Start()
 		if err != nil {
 			return err
 		}

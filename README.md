@@ -208,6 +208,37 @@ _Note: Not support pin sha256_
 }
 ```
 
+## VLESS
+
+Add encryption and decryption. 
+
+```shell
+sing-box generate vless-enc
+
+sing-box generate vless-enc -m # ML-KEM-768
+```
+
+```json5
+{
+  "inbounds": [
+    {
+      "type": "vless",
+      "tag": "vless-in",
+      "decryption": "mlkem768x25519plus.native.600s.qEjiFe8d_WUw8LGe8VH8GnEPLxiHNqT1honkCkSXE2M"
+    }
+  ],
+  "outbounds": [
+    {
+      "type": "vless",
+      "tag": "vless-out",
+      "encryption": "mlkem768x25519plus.native.0rtt.JytWZyE79E7RlfntZG4DZb3o5czP37tBo9icrKgGEDk"
+    }
+  ]
+}
+```
+
+You can set environment `SING_VMESS_ENCRYPTION_DISABLE_AES` = `1` to disable AES.
+
 ## Rule
 
 ```json5
