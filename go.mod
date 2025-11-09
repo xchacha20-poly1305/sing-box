@@ -90,6 +90,7 @@ replace (
 	github.com/sagernet/sing-quic => github.com/reF1nd/sing-quic v0.7.2-0.20261127162851-680b92488c5d
 	github.com/sagernet/sing-snell => github.com/reF1nd/sing-snell v0.0.0-20261126085318-32cdba1b822c
 	github.com/sagernet/sing-tun => github.com/reF1nd/sing-tun v0.9.7-0.20261126054119-6ba2b41fb95d
+	github.com/sagernet/sing-vmess => github.com/xchacha20-poly1305/sing-vmess v0.2.9-0.20261125043036-1952e350d5f0
 	github.com/sagernet/tailscale => github.com/reF1nd/tailscale v1.106.1-sing-box-1.15-mod.1.0.20261126083945-24a740396f88
 	github.com/sagernet/wireguard-go => github.com/reF1nd/wireguard-go v0.0.8-0.20261126060006-feba8217c4a5
 )
@@ -214,6 +215,6 @@ require (
 	golang.zx2c4.com/wireguard/windows v1.0.1 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260817212433-ac3dfec99bb1 // indirect
 	gopkg.in/yaml.v3 v3.0.1
-	lukechampine.com/blake3 v1.3.0 // indirect
+	lukechampine.com/blake3 v1.4.1 // indirect
 	zombiezen.com/go/capnproto2 v2.18.2+incompatible // indirect
 )
