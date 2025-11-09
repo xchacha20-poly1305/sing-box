@@ -3,6 +3,8 @@ package vless
 import (
 	"context"
 	"net"
+	"os"
+	"strconv"
 
 	"github.com/sagernet/sing-box/adapter"
 	"github.com/sagernet/sing-box/adapter/outbound"
@@ -15,6 +17,7 @@ import (
 	"github.com/sagernet/sing-box/transport/v2ray"
 	"github.com/sagernet/sing-vmess/packetaddr"
 	"github.com/sagernet/sing-vmess/vless"
+	"github.com/sagernet/sing-vmess/vless/encryption"
 	"github.com/sagernet/sing/common"
 	"github.com/sagernet/sing/common/bufio"
 	E "github.com/sagernet/sing/common/exceptions"
@@ -86,7 +89,13 @@ func NewOutbound(ctx context.Context, router adapter.Router, logger log.ContextL
 			return nil, E.New("unknown packet encoding: ", options.PacketEncoding)
 		}
 	}
-	outbound.client, err = vless.NewClient(options.UUID, options.Flow, logger)
+	if aesOptions, loaded := os.LookupEnv("SING_VMESS_ENCRYPTION_DISABLE_AES"); loaded {
+		if disableAes, err := strconv.ParseBool(aesOptions); err == nil {
+			logger.DebugContext(ctx, "override VLESS encryption disable aes: ", disableAes)
+			ctx = encryption.OverrideUseAes(ctx, !disableAes)
+		}
+	}
+	outbound.client, err = vless.NewClient(ctx, options.UUID, options.Flow, options.Encryption, logger)
 	if err != nil {
 		return nil, err
 	}
