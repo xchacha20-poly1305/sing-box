@@ -252,6 +252,7 @@ type VlessOption struct {
 	GrpcOpts       GrpcOptions  `yaml:"grpc-opts,omitempty"`
 	WSOpts         WSOptions    `yaml:"ws-opts,omitempty"`
 	MuxOpts        *MuxOptions  `yaml:"smux,omitempty"`
+	Encryption     string            `yaml:"encryption,omitempty"`
 }
 
 func (v *VlessOption) Build() any {
@@ -278,6 +279,7 @@ func (v *VlessOption) Build() any {
 		Multiplex:                   v.MuxOpts.Build(),
 		Transport:                   clashTransport(v.Network, v.HTTPOpts, v.HTTP2Opts, v.GrpcOpts, v.WSOpts),
 		PacketEncoding:              &v.PacketEncoding,
+		Encryption:     v.Encryption,
 	}
 }
 

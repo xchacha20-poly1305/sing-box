@@ -398,7 +398,7 @@ func parseVLESSLink(link string) (option.Outbound, error) {
 	for key, values := range linkURL.Query() {
 		value := values[0]
 		switch key {
-		case "key", "alpn", "seed", "path", "host":
+		case "key", "alpn", "seed", "path", "host", "encryption":
 			proxy[key] = value
 		default:
 			proxy[key] = value
@@ -454,6 +454,7 @@ func parseVLESSLink(link string) (option.Outbound, error) {
 			TLSOptions.UTLS.Enabled = true
 			TLSOptions.UTLS.Fingerprint = value
 		case "flow":
+			value = strings.TrimSuffix(value, "-udp443")
 			if value == "xtls-rprx-vision" {
 				options.Flow = "xtls-rprx-vision"
 			}
@@ -464,6 +465,12 @@ func parseVLESSLink(link string) (option.Outbound, error) {
 		case "tfo", "tcp-fast-open", "tcp_fast_open":
 			if value == "1" || value == "true" {
 				options.TCPFastOpen = true
+			}
+		case "encryption":
+			switch value {
+			case "", "none":
+			default:
+				options.Encryption = value
 			}
 		}
 	}
