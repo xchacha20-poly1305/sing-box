@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/sagernet/sing-box/adapter"
+	"github.com/sagernet/sing-box/common/congestioncontrol"
 	"github.com/sagernet/sing-box/common/conntrack"
 	"github.com/sagernet/sing-box/common/listener"
 	C "github.com/sagernet/sing-box/constant"
@@ -169,6 +170,10 @@ func NewDefault(ctx context.Context, options option.DialerOptions) (*DefaultDial
 	if !udpFragment {
 		dialer.Control = control.Append(dialer.Control, control.DisableUDPFragment())
 		listener.Control = control.Append(listener.Control, control.DisableUDPFragment())
+	}
+	if options.CongestionControl != "" {
+		dialer.Control = control.Append(dialer.Control, congestioncontrol.CongestionControl(options.CongestionControl))
+		listener.Control = control.Append(listener.Control, congestioncontrol.CongestionControl(options.CongestionControl))
 	}
 	var (
 		dialer4    = dialer

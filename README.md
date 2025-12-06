@@ -18,14 +18,14 @@
     {
       "type": "direct",
       "tag": "direct",
-      "tcp_keep_alive_interval": "15s",
-      "tcp_keep_alive_idle": "10min"
+      "congestion_control": "bbr"
     }
   ]
 }
 ```
 
-TCP Keep alive options.
+* `congestion_control`: [Linux only] TCP congestion control.
+  Run `cat /proc/sys/net/ipv4/tcp_available_congestion_control` to see optional values.
 
 ## Inbound TLS
 
