@@ -5,6 +5,7 @@ import (
 	"net/netip"
 
 	"github.com/sagernet/sing-box/adapter"
+	"github.com/sagernet/sing-box/dns"
 	E "github.com/sagernet/sing/common/exceptions"
 	"github.com/sagernet/sing/common/logger"
 	"github.com/sagernet/sing/service"
@@ -80,7 +81,7 @@ func (s *Store) Create(domain string, isIPv6 bool) (netip.Addr, error) {
 	var address netip.Addr
 	if !isIPv6 {
 		if !s.inet4Current.IsValid() {
-			return netip.Addr{}, E.New("missing IPv4 fakeip address range")
+			return netip.Addr{}, E.Cause(dns.RcodeSuccess, "missing IPv4 fakeip address range")
 		}
 		nextAddress := s.inet4Current.Next()
 		if !s.inet4Range.Contains(nextAddress) {
@@ -90,7 +91,7 @@ func (s *Store) Create(domain string, isIPv6 bool) (netip.Addr, error) {
 		address = nextAddress
 	} else {
 		if !s.inet6Current.IsValid() {
-			return netip.Addr{}, E.New("missing IPv6 fakeip address range")
+			return netip.Addr{}, E.Cause(dns.RcodeSuccess, "missing IPv6 fakeip address range")
 		}
 		nextAddress := s.inet6Current.Next()
 		if !s.inet6Range.Contains(nextAddress) {
