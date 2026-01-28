@@ -275,6 +275,8 @@ github.com/vishvananda/netns v0.0.5 h1:DfiHV+j8bA32MFM7bfEunvT8IAqQ/NzSJHtcmW5zd
 github.com/vishvananda/netns v0.0.5/go.mod h1:SpkAiCQRtJ6TvvxPnOSyH3BMl6unz3xZlaprSwhNNJM=
 github.com/x448/float16 v0.8.4 h1:qLwI1I70+NjRFUR3zs1JPUCgaCXSh3SW62uAKT1mSBM=
 github.com/x448/float16 v0.8.4/go.mod h1:14CWIYCyZA/cWjXOioeEpHeN/83MdbZDRQHoFcYsOfg=
+github.com/xchacha20-poly1305/sing-trusttunnel v0.1.0 h1:oLGqFfnE14VQFL+MUs7IDKKkC4GXptD5VAds73/wp1U=
+github.com/xchacha20-poly1305/sing-trusttunnel v0.1.0/go.mod h1:5cpoMJXbwEUjcR25Z/J7PZNuOB2RVjflFKpcAkN6JMw=
 github.com/xchacha20-poly1305/sing-vmess v0.2.7-0.20251206154549-ffe038342a81 h1:VGGsrbMwJfbr8z1Z5ICUF7dRRUq5EKcgvYpsWU4EcGc=
 github.com/xchacha20-poly1305/sing-vmess v0.2.7-0.20251206154549-ffe038342a81/go.mod h1:J9KdaudLrphXQtyp/lnb/8hhmjM0DZ++FU91HhcDZUM=
 github.com/zeebo/assert v1.1.0 h1:hU1L1vLTHsnO8x8c9KAR5GmM5QscxHg5RNU5z5qbUWY=

@@ -297,6 +297,50 @@ For extended features
 
 - Providers: [中文](./docs/configuration/provider/index.zh.md), [English](./docs/configuration/provider/index.md)
 
+## TrustTunnel
+
+```json
+{
+  "outbounds": [
+    {
+      "type": "trusttunnel",
+      "tag": "trusttunnel-out",
+      "server": "127.0.0.1",
+      "server_port": 443,
+      "username": "adguard",
+      "password": "home",
+      "health_check": true,
+      "quic": true,
+      "quic_congestion_control": "bbr",
+      "tls": {
+        "enabled": true,
+        "server_name": "example.com",
+        "alpn": "h3"
+      }
+    }
+  ],
+  "inbounds": [
+    {
+      "type": "trusttunnel",
+      "tag": "trusttunnel-in",
+      "listen": "127.0.0.1",
+      "listen_port": 443,
+      "users": [
+        {
+          "username": "adguard",
+          "password": "home"
+        }
+      ],
+      "quic_congestion_control": "bbr",
+      "network": ["tcp","udp"], // h2 + quic
+      "tls": {
+        "enabled": true
+      }
+    }
+  ]
+}
+```
+
 ## License
 
 ```

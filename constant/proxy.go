@@ -32,7 +32,8 @@ const (
 	TypeOCM                = "ocm"
 	TypeMemoryLeakReporter = "memory-leak-reporter"
 
-	TypeJuicity = "juicity"
+	TypeJuicity     = "juicity"
+	TypeTrustTunnel = "trusttunnel"
 )
 
 const (
@@ -90,6 +91,8 @@ func ProxyDisplayName(proxyType string) string {
 		return "AnyTLS"
 	case TypeJuicity:
 		return "Juicity"
+	case TypeTrustTunnel:
+		return "TrustTunnel"
 	case TypeSelector:
 		return "Selector"
 	case TypeURLTest:
