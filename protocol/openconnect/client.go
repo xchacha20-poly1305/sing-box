@@ -161,11 +161,16 @@ func NewEndpoint(ctx context.Context, router adapter.Router, logger log.ContextL
 	if options.UDPTimeout != 0 {
 		udpTimeout = time.Duration(options.UDPTimeout)
 	}
+	gso := options.System
+	if options.GSO != nil {
+		gso = *options.GSO
+	}
 	networkManager := service.FromContext[adapter.NetworkManager](ctx)
 	openConnectEndpoint.deviceOptions = &openconnecttransport.DeviceOptions{
 		Context:         ctx,
 		Logger:          logger,
 		System:          options.System,
+		GSO:             gso,
 		Handler:         openConnectEndpoint,
 		UDPTimeout:      udpTimeout,
 		ICMPTimeout:     C.ICMPTimeout,
