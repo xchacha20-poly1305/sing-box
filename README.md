@@ -258,6 +258,31 @@ You can set environment `SING_VMESS_ENCRYPTION_DISABLE_AES` = `1` to disable AES
 - `time_range` Listable. This function can restrict your kids' internet access.
 - `time_zone` Time zone for `time_range`. List see <https://en.wikipedia.org/wiki/List_of_tz_database_time_zones#List>. If empty, the behavior is nearly undefined.(Usually uses local or UTC)
 
+For extended features
+
+- Providers: [中文](./docs/configuration/provider/index.zh.md), [English](./docs/configuration/provider/index.md)
+
+## gRPC
+
+### multimode
+
+**Requirement: `with_grpc`**
+
+```json
+{
+  "outbound": [
+    {
+      "tag": "vless_grpc",
+      "type": "vless",
+      "transport": {
+        "type": "grpc",
+        "multi_mode": true
+      }
+    }
+  ]
+}
+```
+
 ## License
 
 ```
