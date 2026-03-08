@@ -31,6 +31,7 @@ type Client struct {
 	dialOptions []grpc.DialOption
 	conn        atomic.Pointer[grpc.ClientConn]
 	connAccess  sync.Mutex
+	multiMode   bool
 }
 
 func NewClient(ctx context.Context, dialer N.Dialer, serverAddr M.Socksaddr, options option.V2RayGRPCOptions, tlsConfig tls.Config) (adapter.V2RayClientTransport, error) {
@@ -73,6 +74,7 @@ func NewClient(ctx context.Context, dialer N.Dialer, serverAddr M.Socksaddr, opt
 		serverAddr:  serverAddr.String(),
 		serviceName: options.ServiceName,
 		dialOptions: dialOptions,
+		multiMode:   options.MultiMode,
 	}, nil
 }
 
@@ -103,6 +105,14 @@ func (c *Client) DialContext(ctx context.Context) (net.Conn, error) {
 	}
 	client := NewGunServiceClient(clientConn).(GunServiceCustomNameClient)
 	ctx, cancel := context.WithCancelCause(ctx)
+	if c.multiMode {
+		stream, err := client.TunMultiCustomName(ctx, c.serviceName)
+		if err != nil {
+			cancel(err)
+			return nil, err
+		}
+		return NewGRPCMultiConn(stream, cancel), nil
+	}
 	stream, err := client.TunCustomName(ctx, c.serviceName)
 	if err != nil {
 		cancel(err)
