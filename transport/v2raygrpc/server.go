@@ -53,11 +53,31 @@ func NewServer(ctx context.Context, logger logger.ContextLogger, options option.
 
 func (s *Server) Tun(server GunService_TunServer) error {
 	conn := NewGRPCConn(server, nil)
-	var source M.Socksaddr
-	if remotePeer, loaded := peer.FromContext(server.Context()); loaded {
+	source := resolveSource(server.Context())
+	done := make(chan struct{})
+	go s.handler.NewConnectionEx(log.ContextWithNewID(s.ctx), conn, source, M.Socksaddr{}, N.OnceClose(func(it error) {
+		close(done)
+	}))
+	<-done
+	return nil
+}
+
+func (s *Server) TunMulti(server grpc.BidiStreamingServer[MultiHunk, MultiHunk]) error {
+	conn := NewGRPCMultiConn(server, nil)
+	source := resolveSource(server.Context())
+	done := make(chan struct{})
+	go s.handler.NewConnectionEx(log.ContextWithNewID(s.ctx), conn, source, M.Socksaddr{}, N.OnceClose(func(it error) {
+		close(done)
+	}))
+	<-done
+	return nil
+}
+
+func resolveSource(ctx context.Context) (source M.Socksaddr) {
+	if remotePeer, loaded := peer.FromContext(ctx); loaded {
 		source = M.SocksaddrFromNet(remotePeer.Addr)
 	}
-	if grpcMetadata, loaded := gM.FromIncomingContext(server.Context()); loaded {
+	if grpcMetadata, loaded := gM.FromIncomingContext(ctx); loaded {
 		forwardFrom := strings.Join(grpcMetadata.Get("X-Forwarded-For"), ",")
 		if forwardFrom != "" {
 			for from := range strings.SplitSeq(forwardFrom, ",") {
@@ -68,12 +88,7 @@ func (s *Server) Tun(server GunService_TunServer) error {
 			}
 		}
 	}
-	done := make(chan struct{})
-	go s.handler.NewConnectionEx(log.ContextWithNewID(s.ctx), conn, source, M.Socksaddr{}, N.OnceClose(func(it error) {
-		close(done)
-	}))
-	<-done
-	return nil
+	return
 }
 
 func (s *Server) mustEmbedUnimplementedGunServiceServer() {
