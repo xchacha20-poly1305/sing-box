@@ -1,11 +1,11 @@
 package v2raygrpc
 
 import (
-	context "context"
+	"context"
 
-	grpc "google.golang.org/grpc"
-	codes "google.golang.org/grpc/codes"
-	status "google.golang.org/grpc/status"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -14,7 +14,8 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	GunService_Tun_FullMethodName = "/transport.v2raygrpc.GunService/Tun"
+	GunService_Tun_FullMethodName      = "/transport.v2raygrpc.GunService/Tun"
+	GunService_TunMulti_FullMethodName = "/transport.v2raygrpc.GunService/TunMulti"
 )
 
 // GunServiceClient is the client API for GunService service.
@@ -22,6 +23,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type GunServiceClient interface {
 	Tun(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[Hunk, Hunk], error)
+	TunMulti(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[MultiHunk, MultiHunk], error)
 }
 
 type gunServiceClient struct {
@@ -45,11 +47,25 @@ func (c *gunServiceClient) Tun(ctx context.Context, opts ...grpc.CallOption) (gr
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type GunService_TunClient = grpc.BidiStreamingClient[Hunk, Hunk]
 
+func (c *gunServiceClient) TunMulti(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[MultiHunk, MultiHunk], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &GunService_ServiceDesc.Streams[1], GunService_TunMulti_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[MultiHunk, MultiHunk]{ClientStream: stream}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type GunService_TunMultiClient = grpc.BidiStreamingClient[MultiHunk, MultiHunk]
+
 // GunServiceServer is the server API for GunService service.
 // All implementations must embed UnimplementedGunServiceServer
 // for forward compatibility.
 type GunServiceServer interface {
 	Tun(grpc.BidiStreamingServer[Hunk, Hunk]) error
+	TunMulti(grpc.BidiStreamingServer[MultiHunk, MultiHunk]) error
 	mustEmbedUnimplementedGunServiceServer()
 }
 
@@ -62,6 +78,10 @@ type UnimplementedGunServiceServer struct{}
 
 func (UnimplementedGunServiceServer) Tun(grpc.BidiStreamingServer[Hunk, Hunk]) error {
 	return status.Error(codes.Unimplemented, "method Tun not implemented")
+}
+
+func (UnimplementedGunServiceServer) TunMulti(grpc.BidiStreamingServer[MultiHunk, MultiHunk]) error {
+	return status.Error(codes.Unimplemented, "method TunMulti not implemented")
 }
 func (UnimplementedGunServiceServer) mustEmbedUnimplementedGunServiceServer() {}
 func (UnimplementedGunServiceServer) testEmbeddedByValue()                    {}
@@ -91,6 +111,13 @@ func _GunService_Tun_Handler(srv interface{}, stream grpc.ServerStream) error {
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type GunService_TunServer = grpc.BidiStreamingServer[Hunk, Hunk]
 
+func _GunService_TunMulti_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(GunServiceServer).TunMulti(&grpc.GenericServerStream[MultiHunk, MultiHunk]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type GunService_TunMultiServer = grpc.BidiStreamingServer[MultiHunk, MultiHunk]
+
 // GunService_ServiceDesc is the grpc.ServiceDesc for GunService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -102,6 +129,12 @@ var GunService_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "Tun",
 			Handler:       _GunService_Tun_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
+		},
+		{
+			StreamName:    "TunMulti",
+			Handler:       _GunService_TunMulti_Handler,
 			ServerStreams: true,
 			ClientStreams: true,
 		},
