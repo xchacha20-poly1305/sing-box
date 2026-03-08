@@ -21576,6 +21576,9 @@
             "permit_without_stream": {
               "type": "boolean"
             },
+            "multi_mode": {
+              "type": "boolean"
+            },
             "force_lite": {
               "type": "boolean"
             }
