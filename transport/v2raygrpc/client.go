@@ -31,6 +31,7 @@ type Client struct {
 	dialOptions []grpc.DialOption
 	conn        atomic.Pointer[grpc.ClientConn]
 	connAccess  sync.Mutex
+	multiMode   bool
 }
 
 func NewClient(ctx context.Context, dialer N.Dialer, serverAddr M.Socksaddr, options option.V2RayGRPCOptions, tlsConfig tls.Config) (adapter.V2RayClientTransport, error) {
@@ -73,6 +74,7 @@ func NewClient(ctx context.Context, dialer N.Dialer, serverAddr M.Socksaddr, opt
 		serverAddr:  serverAddr.String(),
 		serviceName: options.ServiceName,
 		dialOptions: dialOptions,
+		multiMode:   options.MultiMode,
 	}, nil
 }
 
@@ -106,16 +108,28 @@ func (c *Client) DialContext(ctx context.Context) (net.Conn, error) {
 	stopPropagation := context.AfterFunc(ctx, func() {
 		cancel(context.Cause(ctx))
 	})
-	stream, err := client.TunCustomName(streamCtx, c.serviceName)
-	if err != nil {
-		stopPropagation()
-		cancel(err)
-		return nil, err
+	var conn net.Conn
+	if c.multiMode {
+		stream, err := client.TunMultiCustomName(streamCtx, c.serviceName)
+		if err != nil {
+			stopPropagation()
+			cancel(err)
+			return nil, err
+		}
+		conn = NewGRPCMultiConn(stream, cancel)
+	} else {
+		stream, err := client.TunCustomName(streamCtx, c.serviceName)
+		if err != nil {
+			stopPropagation()
+			cancel(err)
+			return nil, err
+		}
+		conn = NewGRPCConn(stream, cancel)
 	}
 	if !stopPropagation() {
 		return nil, context.Cause(ctx)
 	}
-	return NewGRPCConn(stream, cancel), nil
+	return conn, nil
 }
 
 func (c *Client) Close() error {
