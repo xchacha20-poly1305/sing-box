@@ -46,6 +46,7 @@ icon: material/new-box
   "udp_timeout": "5m",
   "ssh_server": false,
   "taildrop_directory": "",
+  "inner_domain_resolver": "", // 或 {}
 
   ... // 拨号字段
 }
@@ -237,6 +238,14 @@ UDP NAT 过期时间。
 为 tailnet 启用文件共享时授予。当 tailnet 策略文件为其他用户的对等节点授予
 `https://tailscale.com/cap/file-send` 时，它们可以向本节点发送文件；当策略文件为本节点授予针对它们的
 `https://tailscale.com/cap/file-sharing-target` 时，可以向它们发送文件。
+
+#### inner_domain_resolver
+
+设置用于解析通过 Tailscale 隊道的连接的域名解析器。
+
+此选项与 [domain_resolver](/zh/configuration/shared/dial/#domain_resolver) 格式相同。
+
+未设置时使用默认DNS。
 
 ### 拨号字段
 

@@ -46,6 +46,7 @@ icon: material/new-box
   "udp_timeout": "5m",
   "ssh_server": false,
   "taildrop_directory": "",
+  "inner_domain_resolver": "", // or {}
 
   ... // Dial Fields
 }
@@ -240,6 +241,14 @@ Sending and receiving files also require the node capability
 sharing is enabled for the tailnet. Peers of another user may send files to this node when the
 tailnet policy file grants them `https://tailscale.com/cap/file-send`, and may be sent files when
 the policy file grants this node `https://tailscale.com/cap/file-sharing-target` for them.
+
+#### inner_domain_resolver
+
+Set domain resolver for resolving domain names of connections passing through the Tailscale tunnel.
+
+This option uses the same format as [domain_resolver](/configuration/shared/dial/#domain_resolver).
+
+When not set, the default DNS is used.
 
 ### Dial Fields
 
