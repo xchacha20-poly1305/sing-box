@@ -36,7 +36,6 @@ import (
 	"github.com/sagernet/sing-box/protocol/snell"
 	"github.com/sagernet/sing-box/protocol/socks"
 	"github.com/sagernet/sing-box/protocol/ssh"
-	"github.com/sagernet/sing-box/protocol/tor"
 	"github.com/sagernet/sing-box/protocol/trojan"
 	"github.com/sagernet/sing-box/protocol/trusttunnel"
 	"github.com/sagernet/sing-box/protocol/tun"
@@ -47,7 +46,6 @@ import (
 	"github.com/sagernet/sing-box/service/api"
 	originca "github.com/sagernet/sing-box/service/origin_ca"
 	"github.com/sagernet/sing-box/service/resolved"
-	"github.com/sagernet/sing-box/service/ssmapi"
 	E "github.com/sagernet/sing/common/exceptions"
 )
 
@@ -116,7 +114,7 @@ func OutboundRegistry() *outbound.Registry {
 	vmess.RegisterOutbound(registry)
 	trojan.RegisterOutbound(registry)
 	registerNaiveOutbound(registry)
-	tor.RegisterOutbound(registry)
+	// tor.RegisterOutbound(registry)
 	ssh.RegisterOutbound(registry)
 	shadowtls.RegisterOutbound(registry)
 	vless.RegisterOutbound(registry)
@@ -171,7 +169,7 @@ func ServiceRegistry() *service.Registry {
 
 	api.RegisterService(registry)
 	resolved.RegisterService(registry)
-	ssmapi.RegisterService(registry)
+	// ssmapi.RegisterService(registry)
 
 	registerQUICServices(registry)
 	registerDERPService(registry)
