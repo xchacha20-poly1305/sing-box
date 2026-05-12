@@ -6,6 +6,9 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/http/httputil"
+	"net/url"
+	"os"
 
 	"github.com/sagernet/sing-box/adapter"
 	"github.com/sagernet/sing-box/adapter/inbound"
@@ -26,6 +29,7 @@ import (
 	M "github.com/sagernet/sing/common/metadata"
 	N "github.com/sagernet/sing/common/network"
 	aTLS "github.com/sagernet/sing/common/tls"
+	"github.com/sagernet/sing/service"
 
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c" //nolint:staticcheck
@@ -52,6 +56,10 @@ type Inbound struct {
 	authenticator    *auth.Authenticator
 	tlsConfig        tls.ServerConfig
 	httpServer       *http.Server
+
+	tolerateUnpadding bool
+
+	fallback http.Handler
 }
 
 func NewInbound(ctx context.Context, router adapter.Router, logger log.ContextLogger, tag string, options option.NaiveInboundOptions) (adapter.Inbound, error) {
@@ -69,10 +77,12 @@ func NewInbound(ctx context.Context, router adapter.Router, logger log.ContextLo
 		networkIsDefault: options.Network == "",
 		network:          options.Network.Build(),
 		authenticator:    auth.NewAuthenticator(options.Users),
+
+		tolerateUnpadding: options.TolerateUnpadding,
 	}
 	if common.Contains(inbound.network, N.NetworkUDP) {
 		if options.TLS == nil || !options.TLS.Enabled {
-			return nil, E.New("TLS is required for QUIC server")
+			return nil, E.Extend(C.ErrTLSRequired, "TLS is required for QUIC server")
 		}
 	}
 	if len(options.Users) == 0 {
@@ -85,7 +95,52 @@ func NewInbound(ctx context.Context, router adapter.Router, logger log.ContextLo
 		}
 		inbound.tlsConfig = tlsConfig
 	}
+	if options.FallbackURL != "" {
+		fallbackURL, err := url.Parse(options.FallbackURL)
+		if err != nil {
+			return nil, E.Cause(err, "parse fallback URL")
+		}
+		switch fallbackURL.Scheme {
+		case "", "file":
+			_, err = os.Stat(fallbackURL.Path)
+			if err != nil {
+				return nil, E.Cause(err, "check fallback path")
+			}
+			inbound.fallback = http.FileServer(http.Dir(fallbackURL.Path))
+		case "http", "https":
+			httpClientTransport, err := service.FromContext[adapter.HTTPClientManager](ctx).ResolveTransport(ctx, logger, common.PtrValueOrDefault(options.FallbackHTTPClient))
+			if err != nil {
+				return nil, E.Cause(err, "create fallback http client")
+			}
+			inbound.fallback = &httputil.ReverseProxy{
+				Rewrite: func(request *httputil.ProxyRequest) {
+					request.SetURL(fallbackURL)
+				},
+				Transport:  httpClientTransport,
+				BufferPool: httpuutilBufferPool{},
+				ErrorHandler: func(writer http.ResponseWriter, request *http.Request, err error) {
+					ctx := log.ContextWithNewID(request.Context())
+					logger.WarnContext(ctx, E.Cause(err, "forward fallback request"))
+					writer.WriteHeader(http.StatusBadGateway)
+				},
+			}
+		default:
+			return nil, E.New("unsupported fallback URL scheme: ", fallbackURL.Scheme)
+		}
+	}
 	return inbound, nil
+}
+
+var _ httputil.BufferPool = httpuutilBufferPool{}
+
+type httpuutilBufferPool struct{}
+
+func (r httpuutilBufferPool) Get() []byte {
+	return buf.Get(buf.BufferSize)
+}
+
+func (r httpuutilBufferPool) Put(bytes []byte) {
+	_ = buf.Put(bytes)
 }
 
 func (n *Inbound) Start(stage adapter.StartStage, scope *adapter.Scope) error {
@@ -146,22 +201,35 @@ func (n *Inbound) Start(stage adapter.StartStage, scope *adapter.Scope) error {
 
 func (n *Inbound) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	ctx := log.ContextWithNewID(request.Context())
-	if request.Method != "CONNECT" {
-		rejectHTTP(writer, http.StatusBadRequest)
-		n.badRequest(ctx, request, E.New("not CONNECT request"))
-		return
-	} else if request.Header.Get("Padding") == "" {
-		rejectHTTP(writer, http.StatusBadRequest)
-		n.badRequest(ctx, request, E.New("missing naive padding"))
-		return
-	}
 	userName, password, authOk := badhttp.ParseBasicAuth(request.Header.Get("Proxy-Authorization"))
 	if authOk {
 		authOk = n.authenticator.Verify(userName, password)
 	}
 	if !authOk {
-		rejectHTTP(writer, http.StatusProxyAuthRequired)
-		n.badRequest(ctx, request, E.New("authorization failed"))
+		if n.fallback != nil {
+			n.fallback.ServeHTTP(writer, request)
+		} else {
+			rejectHTTP(writer, http.StatusForbidden)
+			n.badRequest(ctx, request, E.New("authorization failed"))
+		}
+		return
+	}
+	if request.Method != http.MethodConnect {
+		if n.fallback != nil {
+			n.fallback.ServeHTTP(writer, request)
+		} else {
+			rejectHTTP(writer, http.StatusBadRequest)
+			n.badRequest(ctx, request, E.New("not CONNECT request"))
+		}
+		return
+	}
+	if !n.tolerateUnpadding && request.Header.Get("Padding") == "" {
+		if n.fallback != nil {
+			n.fallback.ServeHTTP(writer, request)
+		} else {
+			rejectHTTP(writer, http.StatusBadRequest)
+			n.badRequest(ctx, request, E.New("missing naive padding"))
+		}
 		return
 	}
 	writer.Header().Set("Padding", generatePaddingHeader())
