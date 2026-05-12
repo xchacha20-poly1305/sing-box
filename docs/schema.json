@@ -8116,6 +8116,15 @@
             },
             "tls": {
               "$ref": "#/$defs/InboundTLSOptions"
+            },
+            "tolerate_unpadding": {
+              "type": "boolean"
+            },
+            "fallback_url": {
+              "type": "string"
+            },
+            "fallback_http_client": {
+              "$ref": "#/$defs/HTTPClientReference"
             }
           },
           "required": [
