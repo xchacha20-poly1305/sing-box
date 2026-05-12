@@ -283,6 +283,26 @@ For extended features
 }
 ```
 
+## naiveproxy
+
+```json5
+{
+  "inbounds": [
+    {
+      "type": "naive",
+      "tag": "naive-in",
+      "tolerate_unpadding": true,
+      "fallback_url": "https://sing-box.org",
+      "fallback_http_client": {}
+    }
+  ]
+}
+```
+
+* **tolerate_unpadding**: Allow unpadding connections (Normal HTTP proxy).
+* **fallback_url** and **fallback_http_client**: URL to fallback and HTTP client to forward request.
+  If `fallback_url` scheme is `file` or empty, fallback to local fs.
+
 ## License
 
 ```
