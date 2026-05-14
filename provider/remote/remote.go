@@ -13,6 +13,7 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -49,6 +50,7 @@ type ProviderRemote struct {
 	cacheFile        adapter.CacheFile
 	httpClient       *http.Client
 	hash             hash.HashType
+	infoMu           sync.RWMutex
 	lastEtag         string
 	lastOutOpts      []option.Outbound
 	lastEPOpts       []option.Endpoint
@@ -128,8 +130,6 @@ func NewProviderRemote(ctx context.Context, router adapter.Router, logFactory lo
 	outbound := service.FromContext[adapter.OutboundManager](ctx)
 	endpointMgr := service.FromContext[adapter.EndpointManager](ctx)
 	logger := logFactory.NewLogger(F.ToString("provider/remote", "[", tag, "]"))
-	updateChan := make(chan struct{})
-	close(updateChan)
 	url := options.URL
 	return &ProviderRemote{
 		Adapter:  provider.NewAdapter(ctx, router, outbound, endpointMgr, logFactory, logger, tag, C.ProviderTypeRemote, options.HealthCheck),
@@ -187,6 +187,7 @@ func (s *ProviderRemote) StartContext(ctx context.Context, startContext *adapter
 			return E.Cause(err, "initial outbound provider: ", s.Tag())
 		}
 	}
+	s.ticker = time.NewTicker(s.updateInterval)
 	go s.loopUpdate()
 	return s.Adapter.Start()
 }
@@ -200,10 +201,14 @@ func (s *ProviderRemote) Update() error {
 }
 
 func (s *ProviderRemote) UpdatedAt() time.Time {
+	s.infoMu.RLock()
+	defer s.infoMu.RUnlock()
 	return s.lastUpdated
 }
 
 func (s *ProviderRemote) SubscriptionInfo() adapter.SubscriptionInfo {
+	s.infoMu.RLock()
+	defer s.infoMu.RUnlock()
 	return s.subscriptionInfo
 }
 
@@ -272,8 +277,10 @@ func (s *ProviderRemote) fetch(ctx context.Context, isStart bool) error {
 	switch resp.StatusCode {
 	case http.StatusOK:
 	case http.StatusNotModified:
+		s.infoMu.Lock()
 		s.subscriptionInfo = info
 		s.lastUpdated = time.Now()
+		s.infoMu.Unlock()
 		if s.cacheFile != nil {
 			saveSub := s.cacheFile.LoadSubscription(s.Tag())
 			if saveSub != nil {
@@ -313,7 +320,9 @@ func (s *ProviderRemote) fetch(ctx context.Context, isStart bool) error {
 	}
 	eTagHeader := resp.Header.Get("Etag")
 	if eTagHeader != "" {
+		s.infoMu.Lock()
 		s.lastEtag = eTagHeader
+		s.infoMu.Unlock()
 	}
 	content, _ := parser.DecodeBase64URLSafe(string(contentRaw))
 	if !hasInfo {
@@ -327,8 +336,10 @@ func (s *ProviderRemote) fetch(ctx context.Context, isStart bool) error {
 		return err
 	}
 	s.UpdateGroups()
+	s.infoMu.Lock()
 	s.subscriptionInfo = info
 	s.lastUpdated = time.Now()
+	s.infoMu.Unlock()
 	if s.path != "" || s.cacheFile != nil {
 		content, _ := json.Marshal(option.Options{
 			Outbounds: s.lastOutOpts,
@@ -425,11 +436,12 @@ func (s *ProviderRemote) loadCacheFile() (bool, error) {
 }
 
 func (s *ProviderRemote) loadInitialPath() error {
-	content, err := filemanager.ReadFile(s.ctx, s.initialPath)
+	contentRaw, err := filemanager.ReadFile(s.ctx, s.initialPath)
 	if err != nil {
 		return err
 	}
-	err = s.loadFromContent(content)
+	content := s.decodeContent(contentRaw)
+	err = s.updateProviderFromContent(content)
 	if err != nil {
 		return err
 	}
@@ -438,12 +450,7 @@ func (s *ProviderRemote) loadInitialPath() error {
 }
 
 func (s *ProviderRemote) loadFromContent(contentRaw []byte) error {
-	content, _ := parser.DecodeBase64URLSafe(string(contentRaw))
-	firstLine, others := getFirstLine(content)
-	if info, ok := parseInfo(firstLine); ok {
-		s.subscriptionInfo = info
-		content, _ = parser.DecodeBase64URLSafe(others)
-	}
+	content := s.decodeContent(contentRaw)
 	outboundOpts, endpointOpts, err := parser.ParseBoxSubscription(s.ctx, content)
 	if err != nil {
 		return err
@@ -453,6 +460,18 @@ func (s *ProviderRemote) loadFromContent(contentRaw []byte) error {
 	s.UpdateEndpoints(s.lastEPOpts, endpointOpts)
 	s.lastEPOpts = endpointOpts
 	return nil
+}
+
+func (s *ProviderRemote) decodeContent(contentRaw []byte) string {
+	content, _ := parser.DecodeBase64URLSafe(string(contentRaw))
+	firstLine, others := getFirstLine(content)
+	if info, ok := parseInfo(firstLine); ok {
+		s.infoMu.Lock()
+		s.subscriptionInfo = info
+		s.infoMu.Unlock()
+		content, _ = parser.DecodeBase64URLSafe(others)
+	}
+	return content
 }
 
 func pathExists(ctx context.Context, path string) (bool, error) {
@@ -470,17 +489,21 @@ func pathExists(ctx context.Context, path string) (bool, error) {
 }
 
 func (s *ProviderRemote) loopUpdate() {
-	if time.Since(s.lastUpdated) < s.updateInterval {
-		select {
-		case <-s.ctx.Done():
-			return
-		case <-time.After(time.Until(s.lastUpdated.Add(s.updateInterval))):
-			s.updateOnce()
-		}
+	s.ticker.Stop()
+	select {
+	case <-s.ticker.C:
+	default:
+	}
+	if remaining := time.Until(func() time.Time {
+		s.infoMu.RLock()
+		defer s.infoMu.RUnlock()
+		return s.lastUpdated
+	}().Add(s.updateInterval)); remaining > 0 {
+		s.ticker.Reset(remaining)
 	} else {
 		s.updateOnce()
+		s.ticker.Reset(s.updateInterval)
 	}
-	s.ticker = time.NewTicker(s.updateInterval)
 	for {
 		runtime.GC()
 		select {
@@ -488,6 +511,7 @@ func (s *ProviderRemote) loopUpdate() {
 			return
 		case <-s.ticker.C:
 			s.updateOnce()
+			s.ticker.Reset(s.updateInterval)
 		}
 	}
 }
