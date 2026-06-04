@@ -18395,6 +18395,19 @@
                 "update_interval": {
                   "$ref": "#/$defs/Duration"
                 },
+                "age_identity": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  ]
+                },
                 "exclude": {
                   "type": "string"
                 },
@@ -18442,6 +18455,19 @@
                 },
                 "update_interval": {
                   "$ref": "#/$defs/Duration"
+                },
+                "age_identity": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  ]
                 },
                 "exclude": {
                   "type": "string"
@@ -18491,6 +18517,19 @@
                 },
                 "update_interval": {
                   "$ref": "#/$defs/Duration"
+                },
+                "age_identity": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  ]
                 },
                 "exclude": {
                   "type": "string"

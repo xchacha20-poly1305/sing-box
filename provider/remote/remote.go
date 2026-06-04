@@ -31,6 +31,8 @@ import (
 	F "github.com/sagernet/sing/common/format"
 	"github.com/sagernet/sing/service"
 	"github.com/sagernet/sing/service/filemanager"
+
+	"filippo.io/age"
 )
 
 func RegisterProvider(registry *provider.Registry) {
@@ -41,15 +43,15 @@ var _ adapter.Provider = (*ProviderRemote)(nil)
 
 type ProviderRemote struct {
 	provider.Adapter
-	ctx              context.Context
-	fetchAccess      sync.Mutex
-	workers          sync.WaitGroup
-	cancel           context.CancelFunc
-	logger           log.ContextLogger
-	outbound         adapter.OutboundManager
-	provider         adapter.ProviderManager
-	cacheFile        adapter.CacheFile
-	httpClient       *http.Client
+	ctx                 context.Context
+	fetchAccess         sync.Mutex
+	workers             sync.WaitGroup
+	cancel              context.CancelFunc
+	logger              log.ContextLogger
+	outbound            adapter.OutboundManager
+	provider            adapter.ProviderManager
+	cacheFile           adapter.CacheFile
+	httpClient          *http.Client
 	hash                hash.HashType
 	infoMu              sync.RWMutex
 	lastEtag            string
@@ -58,7 +60,7 @@ type ProviderRemote struct {
 	hasSubscriptionInfo bool
 	subscriptionInfo    adapter.SubscriptionInfo
 	ticker              *time.Ticker
-	updating         atomic.Bool
+	updating            atomic.Bool
 
 	httpClientOptions *option.HTTPClientOptions
 	downloadDetour    string
@@ -67,6 +69,7 @@ type ProviderRemote struct {
 	path              string
 	initialPath       string
 	userAgent         string
+	ageIdentities     []age.Identity
 	updateInterval    time.Duration
 	exclude           *regexp.Regexp
 	include           *regexp.Regexp
@@ -129,6 +132,17 @@ func NewProviderRemote(ctx context.Context, router adapter.Router, logFactory lo
 	} else {
 		userAgent = options.UserAgent
 	}
+	var (
+		ageIdentities []age.Identity
+		err           error
+	)
+	if len(options.AgeIdentity) > 0 {
+		fullText := strings.Join(options.AgeIdentity, "\n") + "\n"
+		ageIdentities, err = age.ParseIdentities(strings.NewReader(fullText))
+		if err != nil {
+			return nil, E.Cause(err, "parse age identities")
+		}
+	}
 	ctx, cancel := context.WithCancel(ctx)
 	outbound := service.FromContext[adapter.OutboundManager](ctx)
 	endpointMgr := service.FromContext[adapter.EndpointManager](ctx)
@@ -148,6 +162,7 @@ func NewProviderRemote(ctx context.Context, router adapter.Router, logFactory lo
 		path:              path,
 		initialPath:       initialPath,
 		userAgent:         userAgent,
+		ageIdentities:     ageIdentities,
 		updateInterval:    updateInterval,
 		exclude:           (*regexp.Regexp)(options.Exclude),
 		include:           (*regexp.Regexp)(options.Include),
@@ -333,7 +348,14 @@ func (s *ProviderRemote) fetch(ctx context.Context, isStart bool) error {
 	default:
 		return E.New("unexpected status: ", resp.Status)
 	}
-	contentRaw, err := io.ReadAll(resp.Body)
+	var reader io.Reader = resp.Body
+	if len(s.ageIdentities) > 0 {
+		reader, err = age.Decrypt(reader, s.ageIdentities...)
+		if err != nil {
+			return E.Cause(err, "decrypt age")
+		}
+	}
+	contentRaw, err := io.ReadAll(reader)
 	if err != nil {
 		return err
 	}

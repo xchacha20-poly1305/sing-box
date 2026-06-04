@@ -76,6 +76,8 @@ type ProviderRemoteOptions struct {
 	HTTPClient     *HTTPClientOptions `json:"http_client,omitempty"`
 	UpdateInterval badoption.Duration `json:"update_interval,omitempty"`
 
+	AgeIdentity badoption.Listable[string] `json:"age_identity,omitempty"`
+
 	Exclude     *badoption.Regexp          `json:"exclude,omitempty"`
 	Include     *badoption.Regexp          `json:"include,omitempty"`
 	HealthCheck ProviderHealthCheckOptions `json:"health_check,omitempty"`
