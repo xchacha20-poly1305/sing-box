@@ -69,12 +69,13 @@ type ProviderLocalOptions struct {
 }
 
 type ProviderRemoteOptions struct {
-	URL            string             `json:"url"`
+	URL            string                     `json:"url"`
 	Path           string             `json:"path,omitempty"`
 	InitialPath    string             `json:"initial_path,omitempty"`
 	UserAgent      string             `json:"user_agent,omitempty"`
 	HTTPClient     *HTTPClientOptions `json:"http_client,omitempty"`
-	UpdateInterval badoption.Duration `json:"update_interval,omitempty"`
+	UpdateInterval badoption.Duration         `json:"update_interval,omitempty"`
+	AgeIdentity    badoption.Listable[string] `json:"age_identity,omitempty"`
 
 	Exclude     *badoption.Regexp          `json:"exclude,omitempty"`
 	Include     *badoption.Regexp          `json:"include,omitempty"`
