@@ -27,6 +27,7 @@ var (
 	bucketExternalUI       = []byte("external_ui")
 	bucketBranch           = []byte("ref1nd")
 	bucketOutboundProvider = []byte("outbound_provider")
+	bucketStorage          = []byte("storage")
 
 	bucketNameList = []string{
 		string(bucketSelected),
@@ -396,6 +397,24 @@ func (c *CacheFile) createBucket(t *bbolt.Tx, key []byte) (*bbolt.Bucket, error)
 		return nil, err
 	}
 	return bucket.CreateBucketIfNotExists(key)
+}
+
+// branchBucket returns a bucket owned by this branch, nested in bucketBranch
+// so that its name cannot collide with upstream buckets.
+func (c *CacheFile) branchBucket(t *bbolt.Tx, key []byte) *bbolt.Bucket {
+	namespace := c.bucket(t, bucketBranch)
+	if namespace == nil {
+		return nil
+	}
+	return namespace.Bucket(key)
+}
+
+func (c *CacheFile) createBranchBucket(t *bbolt.Tx, key []byte) (*bbolt.Bucket, error) {
+	namespace, err := c.createBucket(t, bucketBranch)
+	if err != nil {
+		return nil, err
+	}
+	return namespace.CreateBucketIfNotExists(key)
 }
 
 func (c *CacheFile) LoadSelected(group string) string {
