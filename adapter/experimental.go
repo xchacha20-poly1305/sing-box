@@ -58,6 +58,10 @@ type CacheFile interface {
 	SaveRuleSet(tag string, set *SavedBinary) error
 	LoadExternalUI(tag string) *SavedBinary
 	SaveExternalUI(tag string, info *SavedBinary) error
+	LoadStorage(key string) []byte
+	StoreStorage(key string, data []byte) error
+	DeleteStorage(key string) error
+
 	LoadSubscription(tag string) *SavedBinary
 	SaveSubscription(tag string, sub *SavedBinary) error
 }

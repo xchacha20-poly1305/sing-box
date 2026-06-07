@@ -6,6 +6,7 @@ var (
 	ErrForbidden      = newError("Forbidden")
 	ErrNotFound       = newError("Resource not found")
 	ErrRequestTimeout = newError("Timeout")
+	ErrNotImplemented = newError("Not Implemented")
 )
 
 // HTTPError is custom HTTP error for API

@@ -31,6 +31,7 @@ func (s *Server) setupMetaAPI(r chi.Router) {
 	r.Get("/memory", memory(s.ctx))
 	r.Mount("/group", groupRouter(s))
 	r.Mount("/upgrade", upgradeRouter(s))
+	r.Mount("/storage", storageRouter(s.ctx))
 }
 
 type Memory struct {
