@@ -85,14 +85,12 @@ func unmarshalBranchBinary(data []byte) (*adapter.SavedBinary, error) {
 func (c *CacheFile) loadBranchBinary(kind []byte, tag string, legacy bool) *adapter.SavedBinary {
 	var result *adapter.SavedBinary
 	err := c.view(func(tx *bbolt.Tx) error {
-		if namespace := c.bucket(tx, bucketBranch); namespace != nil {
-			if bucket := namespace.Bucket(kind); bucket != nil {
-				if data := bucket.Get([]byte(tag)); data != nil {
-					var err error
-					result, err = unmarshalBranchBinary(data)
-					// A corrupt or unsupported new record must not resurrect an old record.
-					return err
-				}
+		if bucket := c.branchBucket(tx, kind); bucket != nil {
+			if data := bucket.Get([]byte(tag)); data != nil {
+				var err error
+				result, err = unmarshalBranchBinary(data)
+				// A corrupt or unsupported new record must not resurrect an old record.
+				return err
 			}
 		}
 		if !legacy {
@@ -129,11 +127,7 @@ func (c *CacheFile) saveBranchBinary(kind []byte, tag string, value *adapter.Sav
 		return err
 	}
 	return c.batch(func(tx *bbolt.Tx) error {
-		namespace, err := c.createBucket(tx, bucketBranch)
-		if err != nil {
-			return err
-		}
-		bucket, err := namespace.CreateBucketIfNotExists(kind)
+		bucket, err := c.createBranchBucket(tx, kind)
 		if err != nil {
 			return err
 		}
