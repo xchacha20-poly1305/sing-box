@@ -68,6 +68,7 @@ var (
 	_ adapter.OutboundWithPreferredRoutes = (*Endpoint)(nil)
 	_ adapter.DirectRouteOutbound         = (*Endpoint)(nil)
 	_ dialer.PacketDialerWithDestination  = (*Endpoint)(nil)
+	_ adapter.InterfaceUpdateListener     = (*Endpoint)(nil)
 )
 
 func init() {
@@ -504,6 +505,17 @@ func (t *Endpoint) watchState() {
 			return false
 		})
 	}
+}
+
+func (t *Endpoint) InterfaceUpdated() {
+	if !t.started.Load() {
+		return
+	}
+	localBackend := t.server.ExportLocalBackend()
+	if localBackend == nil {
+		return
+	}
+	localBackend.NetMon().InjectEvent()
 }
 
 func (t *Endpoint) Close() error {
