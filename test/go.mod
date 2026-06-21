@@ -6,7 +6,7 @@ require github.com/sagernet/sing-box v0.0.0
 
 replace (
 	github.com/sagernet/sing-box => ../
-	github.com/sagernet/sing-tun => github.com/reF1nd/sing-tun v0.8.12-0.20260723102036-5513dbd90daa
+	github.com/sagernet/sing-tun => github.com/reF1nd/sing-tun v0.8.12-0.20260723102037-7c93f96cbeec
 )
 
 require (
