@@ -82,7 +82,7 @@ require (
 	howett.net/plist v1.0.1
 )
 
-replace github.com/sagernet/sing-tun => github.com/reF1nd/sing-tun v0.9.4-0.20260913132227-7445adca5d60
+replace github.com/sagernet/sing-tun => github.com/reF1nd/sing-tun v0.9.4-0.20260913132338-a3c21daeac1b
 
 require (
 	filippo.io/edwards25519 v1.2.0 // indirect
