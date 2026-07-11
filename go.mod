@@ -29,7 +29,7 @@ require (
 	github.com/logrusorgru/aurora v2.0.3+incompatible
 	github.com/mattn/go-runewidth v0.0.27
 	github.com/mdlayher/netlink v1.11.2
-	github.com/metacubex/utls v1.8.7
+	github.com/metacubex/utls v1.8.8-0.20260726052843-7adb2156aad6
 	github.com/mholt/acmez/v3 v3.1.6
 	github.com/miekg/dns v1.1.72
 	github.com/openai/openai-go/v3 v3.26.0

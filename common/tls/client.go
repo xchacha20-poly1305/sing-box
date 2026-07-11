@@ -100,8 +100,13 @@ func NewClientWithOptions(options ClientOptions) (Config, error) {
 	default:
 		return nil, E.New("unknown tls engine: ", options.Options.Engine)
 	}
+	if options.Options.JLS != nil && options.Options.JLS.Enabled && options.Options.Reality != nil && options.Options.Reality.Enabled {
+		return nil, E.New("JLS is conflict with Reality")
+	}
 	if options.Options.Reality != nil && options.Options.Reality.Enabled {
 		return newRealityClient(options.Context, options.Logger, options.ServerAddress, options.Options, options.AllowEmptyServerName)
+	} else if options.Options.JLS != nil && options.Options.JLS.Enabled {
+		return newJLSClient(options.Context, options.Logger, options.ServerAddress, options.Options, options.AllowEmptyServerName)
 	} else if options.Options.UTLS != nil && options.Options.UTLS.Enabled {
 		return newUTLSClient(options.Context, options.Logger, options.ServerAddress, options.Options, options.AllowEmptyServerName)
 	}
