@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/sagernet/sing-box/schema"
+	"github.com/sagernet/sing/common/auth"
 	E "github.com/sagernet/sing/common/exceptions"
 	"github.com/sagernet/sing/common/json/badoption"
 )
@@ -37,6 +38,7 @@ type InboundTLSOptions struct {
 	ACME *InboundACMEOptions `json:"acme,omitempty" schema:"omit"`
 
 	ECH     *InboundECHOptions     `json:"ech,omitempty"`
+	JLS     *InboundJLSOptions     `json:"jls,omitempty"`
 	Reality *InboundRealityOptions `json:"reality,omitempty"`
 
 	RejectUnknownSNI bool `json:"reject_unknown_sni,omitempty"`
@@ -137,6 +139,7 @@ type OutboundTLSOptions struct {
 	HandshakeTimeout           badoption.Duration                  `json:"handshake_timeout,omitempty"`
 	ECH                        *OutboundECHOptions                 `json:"ech,omitempty"`
 	UTLS                       *OutboundUTLSOptions                `json:"utls,omitempty"`
+	JLS                        *OutboundJLSOptions                 `json:"jls,omitempty"`
 	Reality                    *OutboundRealityOptions             `json:"reality,omitempty"`
 }
 
@@ -221,6 +224,17 @@ type InboundRealityOptions struct {
 	MaxTimeDifference badoption.Duration             `json:"max_time_difference,omitempty"`
 }
 
+type InboundJLSOptions struct {
+	Enabled  bool                      `json:"enabled,omitempty"`
+	Users    []auth.User               `json:"users,omitempty"`
+	Fallback InboundJLSFallbackOptions `json:"fallback,omitempty"`
+}
+
+type InboundJLSFallbackOptions struct {
+	ServerOptions
+	DialerOptions
+}
+
 type InboundRealityHandshakeOptions struct {
 	ServerOptions
 	DialerOptions
@@ -252,6 +266,12 @@ type OutboundECHOptions struct {
 type OutboundUTLSOptions struct {
 	Enabled     bool   `json:"enabled,omitempty"`
 	Fingerprint string `json:"fingerprint,omitempty" enum:"chrome_psk,chrome_psk_shuffle,chrome_padding_psk_shuffle,chrome_pq,chrome_pq_psk,chrome,firefox,edge,safari,360,qq,ios,android,random,randomized"`
+}
+
+type OutboundJLSOptions struct {
+	Enabled  bool   `json:"enabled,omitempty"`
+	Password string `json:"password,omitempty"`
+	IV       string `json:"iv,omitempty"`
 }
 
 type OutboundRealityOptions struct {
