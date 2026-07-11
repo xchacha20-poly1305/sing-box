@@ -90,6 +90,21 @@ icon: material/new-box
     "pq_signature_schemes_enabled": false,
     "dynamic_record_sizing_disabled": false
   },
+  "jls": {
+    "enabled": false,
+    "users": [
+      {
+        "username": "",
+        "password": ""
+      }
+    ],
+    "fallback": {
+      "server": "google.com",
+      "server_port": 443,
+
+      ... // Dial Fields
+    }
+  },
   "reality": {
     "enabled": false,
     "handshake": {
@@ -150,6 +165,11 @@ icon: material/new-box
   "utls": {
     "enabled": false,
     "fingerprint": ""
+  },
+  "jls": {
+    "enabled": false,
+    "password": "",
+    "iv": ""
   },
   "reality": {
     "enabled": false,
@@ -583,6 +603,16 @@ Available fingerprint values:
 * randomized
 
 Chrome fingerprint will be used if empty.
+
+#### jls
+
+Enables JLS authentication implemented on top of uTLS. JLS requires TLS 1.3 and authenticates the peer through the ClientHello and ServerHello random fields.
+
+Each server `users` entry has a `username` and `password`; the client `username` and `password` must match one entry. JLS cannot be enabled together with Reality or ECH. The `with_utls` build tag is required; the uTLS Go fingerprint is used on the client when no explicit `utls.fingerprint` is configured.
+
+On the server, `fallback` forwards unauthenticated TLS connections to the configured destination. The original ClientHello is replayed unchanged, and the connection is then relayed in both directions. See [Dial Fields](/configuration/shared/dial/) for supported dialer options.
+
+JLS server currently requires at least one user and an inline certificate/key or `certificate_path`/`key_path`; ACME, certificate providers, and client certificate authentication are unavailable.
 
 ### ECH Fields
 

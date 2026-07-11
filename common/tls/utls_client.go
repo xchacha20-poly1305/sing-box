@@ -444,6 +444,8 @@ func uTLSClientHelloID(name string) (utls.ClientHelloID, error) {
 		return utls.HelloIOS_Auto, nil
 	case "android":
 		return utls.HelloAndroid_11_OkHttp, nil
+	case "go":
+		return utls.HelloGolang, nil
 	case "random":
 		return randomFingerprint, nil
 	case "randomized":
