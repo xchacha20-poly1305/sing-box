@@ -90,6 +90,21 @@ icon: material/new-box
     "pq_signature_schemes_enabled": false,
     "dynamic_record_sizing_disabled": false
   },
+  "jls": {
+    "enabled": false,
+    "users": [
+      {
+        "username": "",
+        "password": ""
+      }
+    ],
+    "fallback": {
+      "server": "google.com",
+      "server_port": 443,
+
+      ... // 拨号字段
+    }
+  },
   "reality": {
     "enabled": false,
     "handshake": {
@@ -150,6 +165,11 @@ icon: material/new-box
   "utls": {
     "enabled": false,
     "fingerprint": ""
+  },
+  "jls": {
+    "enabled": false,
+    "password": "",
+    "iv": ""
   },
   "reality": {
     "enabled": false,
@@ -580,6 +600,16 @@ uTLS 是 "crypto/tls" 的一个分支，它提供了 ClientHello 指纹识别阻
 * randomized
 
 默认使用 chrome 指纹。
+
+#### jls
+
+启用基于 uTLS 实现的 JLS 认证。JLS 要求 TLS 1.3，并通过 ClientHello 和 ServerHello 的 random 字段认证对端。
+
+服务端的每个 `users` 项均包含 `username` 和 `password`；客户端的 `username` 和 `password` 必须与其中一项一致。JLS 不能与 Reality 或 ECH 同时启用。构建时必须包含 `with_utls` 标签；客户端未显式配置 `utls.fingerprint` 时使用 Go 指纹。
+
+服务端的 `fallback` 会将未通过认证的 TLS 连接转发到配置的目标。原始 ClientHello 会被原样重放，随后双向转发连接。支持的拨号选项参阅[拨号字段](/zh/configuration/shared/dial/)。
+
+JLS 服务端目前至少需要配置一个用户，以及内联证书/密钥或 `certificate_path`/`key_path`；不支持 ACME、证书提供器和客户端证书认证。
 
 ### ECH 字段
 
