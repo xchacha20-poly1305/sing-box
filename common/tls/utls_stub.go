@@ -19,6 +19,14 @@ func newUTLSClient(ctx context.Context, logger logger.ContextLogger, serverAddre
 	return nil, E.New(`uTLS is not included in this build, rebuild with -tags with_utls`)
 }
 
+func NewJLSClient(ctx context.Context, logger logger.ContextLogger, serverAddress string, options option.OutboundTLSOptions) (Config, error) {
+	return newJLSClient(ctx, logger, serverAddress, options, false)
+}
+
+func newJLSClient(ctx context.Context, logger logger.ContextLogger, serverAddress string, options option.OutboundTLSOptions, allowEmptyServerName bool) (Config, error) {
+	return nil, E.New(`uTLS, which is required by JLS is not included in this build, rebuild with -tags with_utls`)
+}
+
 func NewRealityClient(ctx context.Context, logger logger.ContextLogger, serverAddress string, options option.OutboundTLSOptions) (Config, error) {
 	return newRealityClient(ctx, logger, serverAddress, options, false)
 }
@@ -29,4 +37,8 @@ func newRealityClient(ctx context.Context, logger logger.ContextLogger, serverAd
 
 func NewRealityServer(ctx context.Context, logger log.Logger, options option.InboundTLSOptions) (ServerConfig, error) {
 	return nil, E.New(`uTLS, which is required by reality is not included in this build, rebuild with -tags with_utls`)
+}
+
+func NewJLSServer(ctx context.Context, logger log.Logger, options option.InboundTLSOptions) (ServerConfig, error) {
+	return nil, E.New(`uTLS, which is required by JLS is not included in this build, rebuild with -tags with_utls`)
 }
