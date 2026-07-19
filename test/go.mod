@@ -8,6 +8,7 @@ replace (
 	github.com/sagernet/sing-anytls => github.com/reF1nd/sing-anytls v0.0.0-20260924145214-2a81df5d3e9f
 	github.com/sagernet/sing-box => ../
 	github.com/sagernet/sing-tun => github.com/reF1nd/sing-tun v0.9.6-0.20260927073404-ea0e670fb952
+	github.com/sagernet/wireguard-go => github.com/reF1nd/wireguard-go v0.0.8-0.20260927094743-30d7940c3d1f
 )
 
 require (
