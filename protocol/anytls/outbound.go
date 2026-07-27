@@ -71,6 +71,7 @@ func NewOutbound(ctx context.Context, router adapter.Router, logger log.ContextL
 
 	client, err := anytls.NewClient(ctx, anytls.ClientConfig{
 		Password:                 options.Password,
+		ClientName:               options.ClientName,
 		IdleSessionCheckInterval: options.IdleSessionCheckInterval.Build(),
 		IdleSessionTimeout:       options.IdleSessionTimeout.Build(),
 		MinIdleSession:           options.MinIdleSession,
