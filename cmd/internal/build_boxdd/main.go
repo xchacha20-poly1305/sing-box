@@ -67,6 +67,9 @@ func build() error {
 	if err != nil {
 		return err
 	}
+	if operatingSystem == "linux" {
+		tags = append(tags, "with_ebpf")
+	}
 	arguments := []string{
 		"build",
 		"-v",
