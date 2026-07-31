@@ -189,6 +189,9 @@ func (w *Endpoint) JudgeFlow(network uint8, source netip.AddrPort, destination n
 			return tun.FlowVerdict{Action: tun.ActionAccept}
 		}
 	}
+	if !adapter.HasAddressFamily(w.localAddresses, destination.Addr().Is4()) {
+		return tun.FlowVerdict{Action: tun.ActionReject}
+	}
 	return adapter.JudgeFlow(w.router, w.Tag(), w.Type(), network, source, destination, firstPacket)
 }
 

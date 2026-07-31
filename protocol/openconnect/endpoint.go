@@ -102,6 +102,9 @@ func judgeOpenConnectFlow(router adapter.Router, tag string, endpointType string
 			return tun.FlowVerdict{Action: tun.ActionAccept}
 		}
 	}
+	if !adapter.HasAddressFamily(localAddresses, destination.Addr().Is4()) {
+		return tun.FlowVerdict{Action: tun.ActionReject}
+	}
 	return adapter.JudgeFlow(router, tag, endpointType, network, source, destination, firstPacket)
 }
 

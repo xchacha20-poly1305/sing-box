@@ -8,6 +8,7 @@ import (
 
 	"github.com/sagernet/sing-tun"
 	"github.com/sagernet/sing-tun/gtcpip/header"
+	"github.com/sagernet/sing/common"
 	M "github.com/sagernet/sing/common/metadata"
 	N "github.com/sagernet/sing/common/network"
 	"github.com/sagernet/sing/common/x/list"
@@ -47,6 +48,12 @@ type PreMatchResult struct {
 	Destination netip.AddrPort
 	UDPTimeout  time.Duration
 	NewTracker  func() tun.FlowTracker
+}
+
+func HasAddressFamily(localAddresses []netip.Prefix, destinationIsIPv4 bool) bool {
+	return common.Any(localAddresses, func(it netip.Prefix) bool {
+		return it.Addr().Is4() == destinationIsIPv4
+	})
 }
 
 func JudgeFlow(router Router, inbound string, inboundType string, network uint8, source netip.AddrPort, destination netip.AddrPort, firstPacket []byte) tun.FlowVerdict {
