@@ -49,7 +49,6 @@ import (
 	"github.com/coder/websocket"
 	"github.com/go-chi/render"
 	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c" //nolint:staticcheck
 )
 
 func Register(registry *boxService.Registry) {
@@ -216,9 +215,13 @@ func (d *Service) Start(stage adapter.StartStage) error {
 			d.tlsConfig.SetNextProtos(append([]string{http2.NextProtoTLS}, d.tlsConfig.NextProtos()...))
 		}
 		tcpListener = aTLS.NewListener(tcpListener, d.tlsConfig)
+		protocols := new(http.Protocols)
+		protocols.SetHTTP1(true)
+		protocols.SetHTTP2(true)
+		protocols.SetUnencryptedHTTP2(true)
 		httpServer := &http.Server{
-			//nolint:staticcheck
-			Handler: h2c.NewHandler(derpMux, &http2.Server{}),
+			Handler:   derpMux,
+			Protocols: protocols,
 		}
 		go httpServer.Serve(tcpListener)
 
