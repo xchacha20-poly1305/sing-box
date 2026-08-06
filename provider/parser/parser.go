@@ -97,7 +97,7 @@ func overrideOutbounds(outbounds []option.Outbound, overrideDialerOptions *optio
 			options.OutboundTLSOptionsContainer.TLS = overrideTLSOption(options.OutboundTLSOptionsContainer.TLS, overrideTLSOptions)
 			if overrideAnyTLSOptions != nil {
 				if overrideAnyTLSOptions.ClientMetadata != nil {
-					options.ClientMetadata = overrideAnyTLSOptions.ClientMetadata
+					options.ClientMetadata = *overrideAnyTLSOptions.ClientMetadata
 				}
 				if overrideAnyTLSOptions.DisableReuse != nil {
 					options.DisableReuse = *overrideAnyTLSOptions.DisableReuse

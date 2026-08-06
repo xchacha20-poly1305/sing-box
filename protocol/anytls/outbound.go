@@ -4,7 +4,6 @@ import (
 	"context"
 	"net"
 	"os"
-	"strings"
 
 	"github.com/sagernet/sing-box/adapter"
 	"github.com/sagernet/sing-box/adapter/outbound"
@@ -18,16 +17,16 @@ import (
 	N "github.com/sagernet/sing/common/network"
 	"github.com/sagernet/sing/common/uot"
 
-	anytls "github.com/anytls/sing-anytls"
+	"github.com/anytls/sing-anytls"
 	"github.com/anytls/sing-anytls/util"
 )
 
+func init() {
+	util.Version = ""
+}
+
 func RegisterOutbound(registry *outbound.Registry) {
 	outbound.Register[option.AnyTLSOutboundOptions](registry, C.TypeAnyTLS, NewOutbound)
-
-	if !strings.Contains(util.Version, "sing-box") {
-		util.Version = util.Version + " sing-box/" + C.Version
-	}
 }
 
 var _ adapter.OutboundWithMultiplex = (*Outbound)(nil)
@@ -78,7 +77,7 @@ func NewOutbound(ctx context.Context, router adapter.Router, logger log.ContextL
 
 	outbound.clientOptions = anytls.ClientConfig{
 		Password:                 options.Password,
-		ClientMetadata:           clientMetadataOrDefault(options.ClientMetadata),
+		ClientMetadata:           options.ClientMetadata,
 		IdleSessionCheckInterval: options.IdleSessionCheckInterval.Build(),
 		IdleSessionTimeout:       options.IdleSessionTimeout.Build(),
 		MinIdleSession:           options.MinIdleSession,
@@ -103,13 +102,6 @@ func (h *Outbound) Start(stage adapter.StartStage) error {
 		Version: uot.Version,
 	}
 	return nil
-}
-
-func clientMetadataOrDefault(clientMetadata *string) string {
-	if clientMetadata == nil {
-		return util.Version
-	}
-	return *clientMetadata
 }
 
 type anytlsDialer func(ctx context.Context, destination M.Socksaddr) (net.Conn, error)
