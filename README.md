@@ -152,7 +152,7 @@ sing-box -c config.json tools speedtest --outbound "proxy"
 
 Server:
 
-Supported: AnyTLS, HTTP, Hysteria2, mixed, shadowsocks, socks, trojan, TUIC, VLESS, VMess.
+Supported: AnyTLS, HTTP, Hysteria2, mixed, shadowsocks, socks, trojan, TUIC, Juicity, VLESS, VMess.
 
 ```json
 {
@@ -160,6 +160,49 @@ Supported: AnyTLS, HTTP, Hysteria2, mixed, shadowsocks, socks, trojan, TUIC, VLE
     {
       "type": "anytls",
       "speedtest": "allow"
+    }
+  ]
+}
+```
+
+## Juicity
+
+Powered by [dyhkwong/sing-juicity](https://github.com/dyhkwong/sing-juicity).
+
+_Note: Not support pin sha256_
+
+```json5
+{
+  "inbounds": [
+    {
+      "type": "juicity",
+      "tag": "juicity-in",
+      "listen": "::",
+      "listen_port": 443,
+      "users": [
+        {
+          "name": "dyhkwong",
+          "uuid": "1e50e0d5-54a6-515b-a2f3-316d50b5ef7c",
+          "password": "sing-juicity"
+        }
+      ],
+      "auth_timeout": "3s",
+      "tls": {
+        "enabled": true
+      }
+    }
+  ],
+  "outbounds": [
+    {
+      "type": "juicity",
+      "tag": "juicity-out",
+      "server": "example.com",
+      "server_port": 443,
+      "uuid": "1e50e0d5-54a6-515b-a2f3-316d50b5ef7c",
+      "password": "sing-juicity",
+      "tls": {
+        "enabled": true
+      }
     }
   ]
 }
