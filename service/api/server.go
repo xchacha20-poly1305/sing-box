@@ -21,7 +21,6 @@ import (
 	"github.com/sagernet/sing/service"
 
 	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c" //nolint:staticcheck
 )
 
 func RegisterService(registry *boxService.Registry) {
@@ -88,12 +87,16 @@ func (s *Service) Start(stage adapter.StartStage, scope *adapter.Scope) error {
 		}
 		scope.Add(s.dashboard.close)
 	}
+	protocols := new(http.Protocols)
+	protocols.SetHTTP1(true)
+	protocols.SetHTTP2(true)
+	protocols.SetUnencryptedHTTP2(true)
 	httpServer := &http.Server{
-		//nolint:staticcheck
-		Handler: h2c.NewHandler(newHTTPHandler(s.logger, grpcServer, s.options, s.dashboard, observabilityHandler), new(http2.Server)),
+		Handler: newHTTPHandler(s.logger, grpcServer, s.options, s.dashboard, observabilityHandler),
 		BaseContext: func(net.Listener) context.Context {
 			return ctx
 		},
+		Protocols: protocols,
 	}
 	if s.tlsConfig != nil {
 		err := s.tlsConfig.Start()

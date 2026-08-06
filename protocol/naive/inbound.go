@@ -32,7 +32,6 @@ import (
 	"github.com/sagernet/sing/service"
 
 	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c" //nolint:staticcheck
 )
 
 var (
@@ -160,12 +159,16 @@ func (n *Inbound) Start(stage adapter.StartStage, scope *adapter.Scope) error {
 		if err != nil {
 			return err
 		}
+		protocols := new(http.Protocols)
+		protocols.SetHTTP1(true)
+		protocols.SetHTTP2(true)
+		protocols.SetUnencryptedHTTP2(true)
 		n.httpServer = &http.Server{
-			//nolint:staticcheck
-			Handler: h2c.NewHandler(n, &http2.Server{}),
+			Handler: n,
 			BaseContext: func(listener net.Listener) context.Context {
 				return n.ctx
 			},
+			Protocols: protocols,
 		}
 		listener := net.Listener(tcpListener)
 		if n.tlsConfig != nil {
