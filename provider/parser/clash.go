@@ -366,23 +366,34 @@ type HysteriaOption struct {
 func (h *HysteriaOption) Build() any {
 	h.TLS = true
 	h.TFO = h.FastOpen
-	return &option.HysteriaOutboundOptions{
-		DialerOptions:               h.DialerOptions.Build(),
-		ServerOptions:               h.ServerOptions.Build(),
-		ServerPorts:                 clashPorts(h.Ports),
-		HopInterval:                 badoption.Duration(h.HopInterval),
-		Up:                          clashSpeedToNetworkBytes(h.Up),
-		UpMbps:                      h.UpSpeed,
-		Down:                        clashSpeedToNetworkBytes(h.Down),
-		DownMbps:                    h.DownSpeed,
-		Obfs:                        h.Obfs,
-		Auth:                        []byte(h.Auth),
-		AuthString:                  h.AuthString,
-		ReceiveWindowConn:           uint64(h.ReceiveWindowConn),
-		ReceiveWindow:               uint64(h.ReceiveWindow),
-		DisableMTUDiscovery:         h.DisableMTUDiscovery,
+	outbound := &option.HysteriaOutboundOptions{
+		DialerOptions: h.DialerOptions.Build(),
+		ServerOptions: h.ServerOptions.Build(),
+		ServerPorts:   clashPorts(h.Ports),
+		HopInterval:   badoption.Duration(h.HopInterval),
+		Up:            clashSpeedToNetworkBytes(h.Up),
+		UpMbps:        h.UpSpeed,
+		Down:          clashSpeedToNetworkBytes(h.Down),
+		DownMbps:      h.DownSpeed,
+		Obfs:          h.Obfs,
+		Auth:          []byte(h.Auth),
+		AuthString:    h.AuthString,
+		QUICOptions: option.QUICOptions{
+			HTTP2Options: option.HTTP2Options{
+				ConnectionReceiveWindow: clashMemoryBytes(h.ReceiveWindowConn),
+				StreamReceiveWindow:     clashMemoryBytes(h.ReceiveWindow),
+			},
+			DisablePathMTUDiscovery: h.DisableMTUDiscovery,
+		},
 		OutboundTLSOptionsContainer: clashTLSOptions(h.Server, &h.TLSOptions),
 	}
+	return outbound
+}
+
+func clashMemoryBytes(value int) byteformats.MemoryBytes {
+	var result byteformats.MemoryBytes
+	_ = result.UnmarshalJSON(strconv.AppendInt(nil, int64(value), 10))
+	return result
 }
 
 type Hysteria2Option struct {
