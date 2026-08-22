@@ -34,6 +34,8 @@ type Client struct {
 	options    option.V2RayGRPCOptions
 	url        *url.URL
 	host       string
+
+	connTracker *v2rayhttp.ConnTracker
 }
 
 func NewClient(ctx context.Context, dialer N.Dialer, serverAddr M.Socksaddr, options option.V2RayGRPCOptions, tlsConfig tls.Config) adapter.V2RayClientTransport {
@@ -59,10 +61,16 @@ func NewClient(ctx context.Context, dialer N.Dialer, serverAddr M.Socksaddr, opt
 			RawPath: "/" + url.PathEscape(options.ServiceName) + "/Tun",
 		},
 		host: host,
+
+		connTracker: v2rayhttp.NewConnTracker(),
 	}
 	if tlsConfig == nil {
 		client.transport.DialTLSContext = func(ctx context.Context, network, addr string, cfg *tls.STDConfig) (net.Conn, error) {
-			return dialer.DialContext(ctx, network, M.ParseSocksaddr(addr))
+			conn, err := dialer.DialContext(ctx, network, M.ParseSocksaddr(addr))
+			if err != nil {
+				return nil, err
+			}
+			return client.connTracker.Track(conn), nil
 		}
 	} else {
 		if len(tlsConfig.NextProtos()) == 0 {
@@ -70,7 +78,11 @@ func NewClient(ctx context.Context, dialer N.Dialer, serverAddr M.Socksaddr, opt
 		}
 		tlsDialer := tls.NewDialer(dialer, tlsConfig)
 		client.transport.DialTLSContext = func(ctx context.Context, network, addr string, cfg *tls.STDConfig) (net.Conn, error) {
-			return tlsDialer.DialTLSContext(ctx, M.ParseSocksaddr(addr))
+			conn, err := tlsDialer.DialTLSContext(ctx, M.ParseSocksaddr(addr))
+			if err != nil {
+				return nil, err
+			}
+			return client.connTracker.Track(conn), nil
 		}
 	}
 
@@ -103,6 +115,6 @@ func (c *Client) DialContext(ctx context.Context) (net.Conn, error) {
 }
 
 func (c *Client) Close() error {
-	v2rayhttp.ResetTransport(c.transport)
+	v2rayhttp.ResetTransport(c.transport, c.connTracker)
 	return nil
 }
