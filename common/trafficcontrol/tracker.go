@@ -158,6 +158,11 @@ func (t *connTracker) Metadata() *TrackerMetadata {
 	return &t.metadata
 }
 
+func (t *connTracker) CountKernelTraffic(upload, download int64) {
+	t.metadata.Upload.Add(upload)
+	t.metadata.Download.Add(download)
+}
+
 func (t *connTracker) Close() error {
 	t.manager.leave(t)
 	return t.ExtendedConn.Close()

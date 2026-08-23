@@ -2,6 +2,7 @@ package adapter
 
 import (
 	"context"
+	"net"
 	"net/netip"
 
 	"github.com/sagernet/sing-box/log"
@@ -9,6 +10,17 @@ import (
 	"github.com/sagernet/sing-tun"
 	N "github.com/sagernet/sing/common/network"
 )
+
+// ConnectionSplicer is an optional kernel relay for an already-routed TCP
+// connection. Returning false leaves both connections owned by the caller.
+type ConnectionSplicer interface {
+	TrySpliceTCP(ctx context.Context, dialer N.Dialer, local, remote net.Conn, metadata InboundContext, onClose N.CloseHandlerFunc) bool
+}
+
+// KernelTrafficCounter accepts traffic that bypassed userspace copy accounting.
+type KernelTrafficCounter interface {
+	CountKernelTraffic(upload, download int64)
+}
 
 // Note: for proxy protocols, outbound creates early connections by default.
 

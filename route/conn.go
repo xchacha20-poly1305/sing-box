@@ -26,6 +26,7 @@ import (
 	M "github.com/sagernet/sing/common/metadata"
 	N "github.com/sagernet/sing/common/network"
 	"github.com/sagernet/sing/common/x/list"
+	"github.com/sagernet/sing/service"
 )
 
 var _ adapter.ConnectionManager = (*ConnectionManager)(nil)
@@ -150,6 +151,11 @@ func (m *ConnectionManager) NewConnection(ctx context.Context, this N.Dialer, co
 		return
 	}
 	if m.kickWriteHandshake(ctx, remoteConn, conn, serverFirst, true, &done, onClose) {
+		return
+	}
+	if splicer := service.FromContext[adapter.ConnectionSplicer](ctx); splicer != nil &&
+		splicer.TrySpliceTCP(ctx, this, conn, remoteConn, metadata, onClose) {
+		m.logger.DebugContext(ctx, "connection handed to experimental eBPF TCP splice")
 		return
 	}
 	go m.connectionCopy(ctx, conn, remoteConn, false, &done, onClose)
