@@ -6,13 +6,12 @@ import (
 	"io"
 	"net/http"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/sagernet/sing-box/adapter"
+	"github.com/sagernet/sing-box/common/archive"
 	"github.com/sagernet/sing-box/log"
 	"github.com/sagernet/sing-box/option"
-	"github.com/sagernet/sing/common"
 	E "github.com/sagernet/sing/common/exceptions"
 	"github.com/sagernet/sing/service"
 	"github.com/sagernet/sing/service/filemanager"
@@ -155,44 +154,7 @@ func (s *Server) downloadZIP(body io.Reader, output string) error {
 		return err
 	}
 	defer reader.Close()
-	trimDir := zipIsInSingleDirectory(reader.File)
-	for _, file := range reader.File {
-		if file.FileInfo().IsDir() {
-			continue
-		}
-		pathElements := strings.Split(file.Name, "/")
-		if trimDir {
-			pathElements = pathElements[1:]
-		}
-		saveDirectory := output
-		if len(pathElements) > 1 {
-			saveDirectory = filepath.Join(saveDirectory, filepath.Join(pathElements[:len(pathElements)-1]...))
-		}
-		err = filemanager.MkdirAll(s.ctx, saveDirectory, 0o755)
-		if err != nil {
-			return err
-		}
-		savePath := filepath.Join(saveDirectory, pathElements[len(pathElements)-1])
-		err = downloadZIPEntry(s.ctx, file, savePath)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func downloadZIPEntry(ctx context.Context, zipFile *zip.File, savePath string) error {
-	saveFile, err := filemanager.Create(ctx, savePath)
-	if err != nil {
-		return err
-	}
-	defer saveFile.Close()
-	reader, err := zipFile.Open()
-	if err != nil {
-		return err
-	}
-	defer reader.Close()
-	return common.Error(io.Copy(saveFile, reader))
+	return archive.ExtractZIP(s.ctx, &reader.Reader, output)
 }
 
 func removeAllInDirectory(ctx context.Context, directory string) {
@@ -203,23 +165,4 @@ func removeAllInDirectory(ctx context.Context, directory string) {
 	for _, dirEntry := range dirEntries {
 		filemanager.RemoveAll(ctx, filepath.Join(directory, dirEntry.Name()))
 	}
-}
-
-func zipIsInSingleDirectory(files []*zip.File) bool {
-	var singleDirectory string
-	for _, file := range files {
-		if file.FileInfo().IsDir() {
-			continue
-		}
-		pathElements := strings.Split(file.Name, "/")
-		if len(pathElements) == 0 {
-			return false
-		}
-		if singleDirectory == "" {
-			singleDirectory = pathElements[0]
-		} else if singleDirectory != pathElements[0] {
-			return false
-		}
-	}
-	return true
 }
