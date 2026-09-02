@@ -243,8 +243,6 @@ github.com/reF1nd/sing-anytls v0.0.14-0.20260803151749-763fb5bccb9d h1:OWBTSd6aF
 github.com/reF1nd/sing-anytls v0.0.14-0.20260803151749-763fb5bccb9d/go.mod h1:7rjN6IukwysmdusYsrV51Fgu1uW6vsrdd6ctjnEAln8=
 github.com/reF1nd/sing-snell v0.0.0-20260830022900-9f5971f89117 h1:6p8x/GZSsueghjACRwrq+1QuLq8pwUYOMXipM1iUu/c=
 github.com/reF1nd/sing-snell v0.0.0-20260830022900-9f5971f89117/go.mod h1:KVhUab4T1LXivZtOPzhqEJo29araU9mp9YtMeiGPY8k=
-github.com/reF1nd/sing-tun v0.8.15-0.20260831053654-9211bf84864f h1:2FmwYN53JpoBAUJeMeGxNdG+xwv4/z+6E1OoEZzG5KI=
-github.com/reF1nd/sing-tun v0.8.15-0.20260831053654-9211bf84864f/go.mod h1:3EgPst7agntRO7D6GOsiZ1l9FoqdLeuWmKT5TnWkmf0=
 github.com/rogpeppe/go-internal v1.14.1 h1:UQB4HGPB6osV0SQTLymcB4TgvyWu6ZyliaW0tI/otEQ=
 github.com/rogpeppe/go-internal v1.14.1/go.mod h1:MaRKkUm5W0goXpeCfT7UZI6fk/L7L7so1lCWt35ZSgc=
 github.com/russross/blackfriday/v2 v2.1.0/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQDYRxCVz55jmeOWTM=
@@ -408,6 +406,8 @@ github.com/x448/float16 v0.8.4 h1:qLwI1I70+NjRFUR3zs1JPUCgaCXSh3SW62uAKT1mSBM=
 github.com/x448/float16 v0.8.4/go.mod h1:14CWIYCyZA/cWjXOioeEpHeN/83MdbZDRQHoFcYsOfg=
 github.com/xchacha20-poly1305/sing-trusttunnel v0.3.0-beta.7.0.20260828091402-603007dc6fc3 h1:NaIWKE47g8rOe+IkBBbxtj9+bvj6miwguc7c3lZFyV8=
 github.com/xchacha20-poly1305/sing-trusttunnel v0.3.0-beta.7.0.20260828091402-603007dc6fc3/go.mod h1:yM25Hg+iQTeJBaIMi8igVdXORBXJC1HGxAW1WEKqJOI=
+github.com/xchacha20-poly1305/sing-tun v0.8.14-0.20260902090004-65723ecf79ad h1:DAxUbBiL0MMiHLqVg8ddWR4mJx5i0QkW/e0NFyUHrrM=
+github.com/xchacha20-poly1305/sing-tun v0.8.14-0.20260902090004-65723ecf79ad/go.mod h1:3EgPst7agntRO7D6GOsiZ1l9FoqdLeuWmKT5TnWkmf0=
 github.com/xchacha20-poly1305/sing-vmess v0.2.9-0.20260805120301-d1db88b727ba h1:/UyS3hLKyTQlxE8DhPN9gux77vLabhzRkNOctRcFqTM=
 github.com/xchacha20-poly1305/sing-vmess v0.2.9-0.20260805120301-d1db88b727ba/go.mod h1:J9KdaudLrphXQtyp/lnb/8hhmjM0DZ++FU91HhcDZUM=
 github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78 h1:ilQV1hzziu+LLM3zUTJ0trRztfwgjqKnBWNtSRkbmwM=

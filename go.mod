@@ -88,7 +88,8 @@ require (
 )
 
 replace (
-	github.com/sagernet/sing-tun => github.com/reF1nd/sing-tun v0.8.15-0.20260831053654-9211bf84864f
+	// github.com/sagernet/sing-tun => github.com/reF1nd/sing-tun v0.8.15-0.20260831053654-9211bf84864f
+	github.com/sagernet/sing-tun => github.com/xchacha20-poly1305/sing-tun v0.8.14-0.20260902090004-65723ecf79ad
 
 	github.com/sagernet/sing-vmess => github.com/xchacha20-poly1305/sing-vmess v0.2.9-0.20260805120301-d1db88b727ba
 )
