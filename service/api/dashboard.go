@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/sagernet/sing-box/adapter"
+	"github.com/sagernet/sing-box/common/archive"
 	"github.com/sagernet/sing-box/log"
 	"github.com/sagernet/sing-box/option"
 	E "github.com/sagernet/sing/common/exceptions"
@@ -237,36 +238,10 @@ func (d *dashboard) extract(body io.Reader, etag string) error {
 	if err != nil {
 		return err
 	}
-	trimDir := zipIsInSingleDirectory(reader.File)
-	for _, file := range reader.File {
-		if file.FileInfo().IsDir() {
-			continue
-		}
-		pathElements := strings.Split(file.Name, "/")
-		if trimDir {
-			pathElements = pathElements[1:]
-		}
-		if len(pathElements) == 0 {
-			continue
-		}
-		relativePath := filepath.Join(pathElements...)
-		if !filepath.IsLocal(relativePath) {
-			filemanager.RemoveAll(d.ctx, tempDir)
-			return E.New("invalid dashboard archive entry: ", file.Name)
-		}
-		savePath := filepath.Join(tempDir, relativePath)
-		err = filemanager.MkdirAll(d.ctx, filepath.Dir(savePath), 0o755)
-		if err != nil {
-			filemanager.RemoveAll(d.ctx, tempDir)
-			return err
-		}
-		err = extractZipEntry(d.ctx, file, savePath)
-		if err != nil {
-			filemanager.RemoveAll(d.ctx, tempDir)
-			return err
-		}
+	err = archive.ExtractZIP(d.ctx, &reader.Reader, tempDir)
+	if err == nil {
+		err = filemanager.WriteFile(d.ctx, filepath.Join(tempDir, dashboardEtagFileName), []byte(etag), 0o644)
 	}
-	err = filemanager.WriteFile(d.ctx, filepath.Join(tempDir, dashboardEtagFileName), []byte(etag), 0o644)
 	if err != nil {
 		filemanager.RemoveAll(d.ctx, tempDir)
 		return err
@@ -276,39 +251,4 @@ func (d *dashboard) extract(body io.Reader, etag string) error {
 		return err
 	}
 	return filemanager.Rename(d.ctx, tempDir, d.path)
-}
-
-func extractZipEntry(ctx context.Context, file *zip.File, savePath string) error {
-	reader, err := file.Open()
-	if err != nil {
-		return err
-	}
-	defer reader.Close()
-	writer, err := filemanager.Create(ctx, savePath)
-	if err != nil {
-		return err
-	}
-	defer writer.Close()
-	_, err = io.Copy(writer, reader)
-	return err
-}
-
-// GitHub archives wrap every file under a single "<repo>-<branch>/" top-level directory.
-func zipIsInSingleDirectory(files []*zip.File) bool {
-	var dirName string
-	for _, file := range files {
-		if file.FileInfo().IsDir() {
-			continue
-		}
-		pathElements := strings.Split(file.Name, "/")
-		if len(pathElements) < 2 {
-			return false
-		}
-		if dirName == "" {
-			dirName = pathElements[0]
-		} else if dirName != pathElements[0] {
-			return false
-		}
-	}
-	return dirName != ""
 }
