@@ -6,6 +6,7 @@ import (
 	"context"
 	"net"
 	"net/netip"
+	"os"
 	"slices"
 	"sync"
 	"sync/atomic"
@@ -177,6 +178,9 @@ func (d *stackDevice) writeBuffers(packetBuffers []*buf.Buffer) error {
 }
 
 func (d *stackDevice) DialContext(ctx context.Context, network string, destination M.Socksaddr) (net.Conn, error) {
+	if d.isClosed() {
+		return nil, os.ErrClosed
+	}
 	inet4Address, inet6Address := d.PortAddresses()
 	address := tcpip.FullAddress{
 		NIC:  tun.DefaultNIC,
@@ -211,6 +215,9 @@ func (d *stackDevice) DialContext(ctx context.Context, network string, destinati
 }
 
 func (d *stackDevice) ListenPacket(ctx context.Context, destination M.Socksaddr) (net.PacketConn, error) {
+	if d.isClosed() {
+		return nil, os.ErrClosed
+	}
 	inet4Address, inet6Address := d.PortAddresses()
 	bind := tcpip.FullAddress{
 		NIC: tun.DefaultNIC,
@@ -244,6 +251,15 @@ func (d *stackDevice) PortMTU() uint32 {
 	return d.options.MTU
 }
 
+func (d *stackDevice) isClosed() bool {
+	select {
+	case <-d.endpoint.done:
+		return true
+	default:
+		return false
+	}
+}
+
 func (d *stackDevice) Close() error {
 	d.closeOnce.Do(func() {
 		close(d.endpoint.done)
@@ -257,7 +273,6 @@ func (d *stackDevice) Close() error {
 		for _, endpoint := range d.stack.CleanupEndpoints() {
 			endpoint.Abort()
 		}
-		d.stack.Wait()
 	})
 	return nil
 }

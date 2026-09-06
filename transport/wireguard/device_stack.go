@@ -99,6 +99,9 @@ func newStackDevice(options DeviceOptions) (*stackDevice, error) {
 }
 
 func (w *stackDevice) DialContext(ctx context.Context, network string, destination M.Socksaddr) (net.Conn, error) {
+	if w.isClosed() {
+		return nil, os.ErrClosed
+	}
 	addr := tcpip.FullAddress{
 		NIC:  tun.DefaultNIC,
 		Port: destination.Port,
@@ -140,6 +143,9 @@ func (w *stackDevice) DialContext(ctx context.Context, network string, destinati
 }
 
 func (w *stackDevice) ListenPacket(ctx context.Context, destination M.Socksaddr) (net.PacketConn, error) {
+	if w.isClosed() {
+		return nil, os.ErrClosed
+	}
 	bind := tcpip.FullAddress{
 		NIC: tun.DefaultNIC,
 	}
@@ -254,6 +260,15 @@ func (w *stackDevice) Events() <-chan wgTun.Event {
 	return w.events
 }
 
+func (w *stackDevice) isClosed() bool {
+	select {
+	case <-w.done:
+		return true
+	default:
+		return false
+	}
+}
+
 func (w *stackDevice) Close() error {
 	w.closeOnce.Do(func() {
 		close(w.done)
@@ -268,7 +283,6 @@ func (w *stackDevice) Close() error {
 		for _, endpoint := range w.stack.CleanupEndpoints() {
 			endpoint.Abort()
 		}
-		w.stack.Wait()
 	})
 	return nil
 }

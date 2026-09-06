@@ -150,7 +150,6 @@ func (w *systemStackDevice) Close() error {
 		for _, endpoint := range w.stack.CleanupEndpoints() {
 			endpoint.Abort()
 		}
-		w.stack.Wait()
 		err = w.systemDevice.Close()
 	})
 	return err
