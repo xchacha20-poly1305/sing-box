@@ -35,6 +35,8 @@ func RegisterDNSTransport(registry *boxDNS.TransportRegistry) {
 	boxDNS.RegisterTransport[option.OpenVPNDNSServerOptions](registry, C.DNSTypeOpenVPN, NewDNSTransport)
 }
 
+var _ adapter.DNSTransportWithPreferredDomain = (*DNSTransport)(nil)
+
 type DNSTransport struct {
 	boxDNS.TransportAdapter
 	ctx                    context.Context
