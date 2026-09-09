@@ -465,11 +465,12 @@ icon: material/new-box
 
 匹配制定出站的首选路由。
 
-| 类型          | 匹配                             |
-|-------------|--------------------------------|
-| `tailscale` | 匹配 MagicDNS 域名和对端的 allowed IPs |
-| `wireguard` | 匹配对端的 allowed IPs              |
-| `bridge`    | 匹配除本机本地地址外的所有地址，仅在[预匹配](/zh/configuration/shared/pre-match/)中 |
+| 类型            | 匹配                             |
+|---------------|--------------------------------|
+| `tailscale`   | 匹配 MagicDNS 域名和对端的 allowed IPs |
+| `wireguard`   | 匹配对端的 allowed IPs              |
+| `easyconnect` | 匹配 VPN 服务器发布的资源列表前缀和域名     |
+| `bridge`      | 匹配除本机本地地址外的所有地址，仅在[预匹配](/zh/configuration/shared/pre-match/)中 |
 
 #### source_mac_address
 

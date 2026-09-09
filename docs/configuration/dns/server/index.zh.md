@@ -2,6 +2,10 @@
 icon: material/alert-decagram
 ---
 
+!!! quote "sing-box 1.15.0 中的更改"
+
+    :material-plus: [easyconnect](./easyconnect/)
+
 !!! quote "sing-box 1.14.0 中的更改"
 
     :material-plus: [mdns](./mdns/)
@@ -47,6 +51,7 @@ DNS 服务器的类型。
 | `fakeip`        | [Fake IP](./fakeip/)      |
 | `tailscale`     | [Tailscale](./tailscale/) |
 | `openconnect`   | [OpenConnect](./openconnect/) |
+| `easyconnect`   | [EasyConnect](./easyconnect/) |
 | `openvpn`       | [OpenVPN](./openvpn/)         |
 | `resolved`      | [Resolved](./resolved/)   |
 | `group`         | [Group](./group/)         |

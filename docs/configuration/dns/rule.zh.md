@@ -531,6 +531,7 @@ Available values: `wifi`, `cellular`, `ethernet` and `other`.
 | `mdns`        | 匹配 mDNS 本地域名（`*.local.` 以及 IPv4/IPv6 链路本地反向区域）              |
 | `tailscale`   | 匹配 MagicDNS 主机和 DNS 路由后缀                                    |
 | `openconnect` | 匹配 VPN 服务器推送的分流 DNS 和搜索域                                  |
+| `easyconnect` | 匹配 VPN 服务器发布的资源列表域名                                       |
 | `resolved`    | 匹配 systemd-resolved 链路中的分流域名和搜索域                            |
 
 #### wifi_ssid
