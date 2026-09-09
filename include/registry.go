@@ -131,6 +131,7 @@ func EndpointRegistry() *endpoint.Registry {
 
 	registerWireGuardEndpoint(registry)
 	registerOpenConnectEndpoint(registry)
+	registerEasyConnectEndpoint(registry)
 	registerOpenVPNEndpoints(registry)
 	registerTailscaleEndpoint(registry)
 
@@ -155,6 +156,7 @@ func DNSTransportRegistry() *dns.TransportRegistry {
 	registerDHCPTransport(registry)
 	registerTailscaleTransport(registry)
 	registerOpenConnectDNSTransport(registry)
+	registerEasyConnectDNSTransport(registry)
 	registerOpenVPNDNSTransport(registry)
 
 	return registry

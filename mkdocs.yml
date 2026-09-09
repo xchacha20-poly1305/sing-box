@@ -104,6 +104,7 @@ nav:
               - FakeIP: configuration/dns/server/fakeip.md
               - Tailscale: configuration/dns/server/tailscale.md
               - OpenConnect: configuration/dns/server/openconnect.md
+              - EasyConnect: configuration/dns/server/easyconnect.md
               - OpenVPN: configuration/dns/server/openvpn.md
               - Resolved: configuration/dns/server/resolved.md
               - Group: configuration/dns/server/group.md
@@ -160,6 +161,7 @@ nav:
           - WireGuard: configuration/endpoint/wireguard.md
           - Tailscale: configuration/endpoint/tailscale.md
           - OpenConnect Client: configuration/endpoint/openconnect.md
+          - EasyConnect Client: configuration/endpoint/easyconnect.md
           - OpenVPN Client: configuration/endpoint/openvpn-client.md
           - OpenVPN Server: configuration/endpoint/openvpn-server.md
       - Inbound:

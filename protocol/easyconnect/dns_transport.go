@@ -1,4 +1,4 @@
-package openconnect
+package easyconnect
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 	"github.com/sagernet/sing-box/dns/transport"
 	"github.com/sagernet/sing-box/log"
 	"github.com/sagernet/sing-box/option"
-	openconnecttransport "github.com/sagernet/sing-box/transport/openconnect"
+	easyconnecttransport "github.com/sagernet/sing-box/transport/easyconnect"
 	"github.com/sagernet/sing/common"
 	E "github.com/sagernet/sing/common/exceptions"
 	"github.com/sagernet/sing/common/logger"
@@ -25,7 +25,7 @@ import (
 )
 
 func RegisterDNSTransport(registry *dns.TransportRegistry) {
-	dns.RegisterTransport[option.OpenConnectDNSServerOptions](registry, C.DNSTypeOpenConnect, NewDNSTransport)
+	dns.RegisterTransport[option.EasyConnectDNSServerOptions](registry, C.DNSTypeEasyConnect, NewDNSTransport)
 }
 
 type DNSTransport struct {
@@ -39,24 +39,25 @@ type DNSTransport struct {
 	dialer                 N.Dialer
 	access                 sync.RWMutex
 	closed                 bool
-	routes                 []openConnectDNSRoute
+	hosts                  map[string][]netip.Addr
+	routes                 []easyConnectDNSRoute
 	searchDomains          []string
 	defaultResolvers       []adapter.DNSTransport
 }
 
 var _ adapter.DNSTransportWithPreferredDomain = (*DNSTransport)(nil)
 
-type openConnectDNSRoute struct {
+type easyConnectDNSRoute struct {
 	domain    string
 	resolvers []adapter.DNSTransport
 }
 
-func NewDNSTransport(ctx context.Context, logger log.ContextLogger, tag string, options option.OpenConnectDNSServerOptions) (adapter.DNSTransport, error) {
+func NewDNSTransport(ctx context.Context, logger log.ContextLogger, tag string, options option.EasyConnectDNSServerOptions) (adapter.DNSTransport, error) {
 	if options.Endpoint == "" {
 		return nil, E.New("missing endpoint tag")
 	}
 	return &DNSTransport{
-		TransportAdapter:       dns.NewTransportAdapter(C.DNSTypeOpenConnect, tag, nil),
+		TransportAdapter:       dns.NewTransportAdapter(C.DNSTypeEasyConnect, tag, nil),
 		logger:                 logger,
 		endpointTag:            options.Endpoint,
 		acceptDefaultResolvers: options.AcceptDefaultResolvers,
@@ -73,27 +74,27 @@ func (t *DNSTransport) Start(stage adapter.StartStage) error {
 	if !loaded {
 		return E.New("endpoint not found: ", t.endpointTag)
 	}
-	openConnectEndpoint, isOpenConnect := rawEndpoint.(*Endpoint)
-	if !isOpenConnect {
-		return E.New("endpoint is not OpenConnect: ", t.endpointTag)
+	easyConnectEndpoint, isEasyConnect := rawEndpoint.(*Endpoint)
+	if !isEasyConnect {
+		return E.New("endpoint is not EasyConnect: ", t.endpointTag)
 	}
-	openConnectEndpoint.dnsTransportAccess.Lock()
-	if openConnectEndpoint.dnsTransport != nil && openConnectEndpoint.dnsTransport.Tag() != t.Tag() {
-		openConnectEndpoint.dnsTransportAccess.Unlock()
+	easyConnectEndpoint.dnsTransportAccess.Lock()
+	if easyConnectEndpoint.dnsTransport != nil && easyConnectEndpoint.dnsTransport.Tag() != t.Tag() {
+		easyConnectEndpoint.dnsTransportAccess.Unlock()
 		return E.New("only one DNS server is allowed for an endpoint")
 	}
-	openConnectEndpoint.dnsTransport = t
-	t.endpoint = openConnectEndpoint
-	t.dialer = openConnectEndpoint
-	state := openConnectEndpoint.state.Load()
-	if state.started && state.tunnelConfigured && openConnectEndpoint.client.Ready() {
+	easyConnectEndpoint.dnsTransport = t
+	t.endpoint = easyConnectEndpoint
+	t.dialer = easyConnectEndpoint
+	state := easyConnectEndpoint.state.Load()
+	if state.started && state.tunnelConfigured && easyConnectEndpoint.client.Ready() {
 		t.updateConfiguration(state.configuration)
 	}
-	openConnectEndpoint.dnsTransportAccess.Unlock()
+	easyConnectEndpoint.dnsTransportAccess.Unlock()
 	return nil
 }
 
-func (t *DNSTransport) updateConfiguration(configuration openconnecttransport.Configuration) {
+func (t *DNSTransport) updateConfiguration(configuration easyconnecttransport.Configuration) {
 	resolverByAddress := make(map[netip.Addr]adapter.DNSTransport)
 	resolverFor := func(address netip.Addr) adapter.DNSTransport {
 		if !address.IsValid() {
@@ -125,47 +126,31 @@ func (t *DNSTransport) updateConfiguration(configuration openconnecttransport.Co
 		return resolvers
 	}
 	defaultResolvers := resolversFor(configuration.DNS)
-	routes := make([]openConnectDNSRoute, 0, len(configuration.SplitDNS)+len(configuration.SearchDomains)+len(configuration.SplitDNSRules))
-	routeIndex := make(map[string]int)
-	for _, rule := range configuration.SplitDNSRules {
-		resolvers := resolversFor(rule.Servers)
-		for _, domain := range rule.Domains {
-			canonicalDomain := canonicalOpenConnectDomain(domain)
-			if canonicalDomain != "" {
-				fqdn := mDNS.Fqdn(canonicalDomain)
-				index, loaded := routeIndex[fqdn]
-				if loaded {
-					resolverSet := make(map[adapter.DNSTransport]bool)
-					for _, resolver := range routes[index].resolvers {
-						resolverSet[resolver] = true
-					}
-					for _, resolver := range resolvers {
-						if !resolverSet[resolver] {
-							routes[index].resolvers = append(routes[index].resolvers, resolver)
-						}
-					}
-				} else {
-					routeIndex[fqdn] = len(routes)
-					routes = append(routes, openConnectDNSRoute{domain: fqdn, resolvers: resolvers})
-				}
-			}
+	hosts := make(map[string][]netip.Addr, len(configuration.Hosts))
+	for _, host := range configuration.Hosts {
+		canonicalDomain := canonicalEasyConnectDomain(host.Domain)
+		if canonicalDomain == "" || len(host.Addresses) == 0 {
+			continue
 		}
+		hosts[mDNS.CanonicalName(canonicalDomain)] = host.Addresses
 	}
-	for _, domain := range append(append([]string(nil), configuration.SplitDNS...), configuration.SearchDomains...) {
-		canonicalDomain := canonicalOpenConnectDomain(domain)
+	routes := make([]easyConnectDNSRoute, 0, len(configuration.SearchDomains))
+	routeIndex := make(map[string]int)
+	for _, domain := range configuration.SearchDomains {
+		canonicalDomain := canonicalEasyConnectDomain(domain)
 		if canonicalDomain != "" {
 			fqdn := mDNS.Fqdn(canonicalDomain)
 			_, loaded := routeIndex[fqdn]
 			if !loaded {
 				routeIndex[fqdn] = len(routes)
-				routes = append(routes, openConnectDNSRoute{domain: fqdn, resolvers: defaultResolvers})
+				routes = append(routes, easyConnectDNSRoute{domain: fqdn, resolvers: defaultResolvers})
 			}
 		}
 	}
 	searchDomains := make([]string, 0, len(configuration.SearchDomains))
 	searchDomainSet := make(map[string]bool)
 	for _, domain := range configuration.SearchDomains {
-		canonicalDomain := canonicalOpenConnectDomain(domain)
+		canonicalDomain := canonicalEasyConnectDomain(domain)
 		if canonicalDomain != "" {
 			fqdn := mDNS.Fqdn(canonicalDomain)
 			if !searchDomainSet[fqdn] {
@@ -174,7 +159,7 @@ func (t *DNSTransport) updateConfiguration(configuration openconnecttransport.Co
 			}
 		}
 	}
-	if !t.acceptDefaultResolvers || !configuration.TunnelAllDNS && (len(configuration.SplitDNS) > 0 || len(configuration.SplitDNSRules) > 0) {
+	if !t.acceptDefaultResolvers {
 		defaultResolvers = nil
 	}
 
@@ -187,6 +172,7 @@ func (t *DNSTransport) updateConfiguration(configuration openconnecttransport.Co
 		return
 	}
 	oldResolvers := t.collectResolversLocked()
+	t.hosts = hosts
 	t.routes = routes
 	t.searchDomains = searchDomains
 	t.defaultResolvers = defaultResolvers
@@ -205,9 +191,10 @@ func (t *DNSTransport) updateConfiguration(configuration openconnecttransport.Co
 			_ = resolver.Close()
 		}
 	}
-	if len(resolverByAddress) > 0 {
-		t.logger.Info("updated ", len(routes), " DNS routes and ", len(resolverByAddress), " resolvers")
-	} else {
+	switch {
+	case len(hosts) > 0 || len(resolverByAddress) > 0:
+		t.logger.Info("updated ", len(hosts), " hosts, ", len(routes), " DNS routes and ", len(resolverByAddress), " resolvers")
+	default:
 		t.logger.Info("cleared DNS configuration")
 	}
 }
@@ -232,6 +219,7 @@ func (t *DNSTransport) Close() error {
 	t.access.Lock()
 	resolvers := t.collectResolversLocked()
 	t.closed = true
+	t.hosts = nil
 	t.routes = nil
 	t.searchDomains = nil
 	t.defaultResolvers = nil
@@ -244,10 +232,14 @@ func (t *DNSTransport) Close() error {
 }
 
 func (t *DNSTransport) PreferredDomain(domain string) bool {
-	canonicalDomain := mDNS.Fqdn(canonicalOpenConnectDomain(domain))
+	canonicalDomain := mDNS.CanonicalName(canonicalEasyConnectDomain(domain))
 	t.access.RLock()
+	_, hostsLoaded := t.hosts[canonicalDomain]
 	routes := t.routes
 	t.access.RUnlock()
+	if hostsLoaded {
+		return true
+	}
 	for _, route := range routes {
 		if mDNS.IsSubDomain(route.domain, canonicalDomain) {
 			return true
@@ -297,7 +289,7 @@ func (t *DNSTransport) exchangeWithSearchDomains(ctx context.Context, message *m
 			rewritten.Question = []mDNS.Question{question}
 			t.exchangeOnce(exchangeCtx, &rewritten, func(response *mDNS.Msg, err error) {
 				if err == nil {
-					restoreOpenConnectDNSQuestion(response, expandedName, originalQuestion)
+					restoreEasyConnectDNSQuestion(response, expandedName, originalQuestion)
 				}
 				exchangeCallback(response, err)
 			})
@@ -311,7 +303,7 @@ func (t *DNSTransport) exchangeWithSearchDomains(ctx context.Context, message *m
 	}, callback)
 }
 
-func restoreOpenConnectDNSQuestion(response *mDNS.Msg, expandedName string, originalQuestion mDNS.Question) {
+func restoreEasyConnectDNSQuestion(response *mDNS.Msg, expandedName string, originalQuestion mDNS.Question) {
 	response.Question = []mDNS.Question{originalQuestion}
 	for _, record := range response.Answer {
 		if strings.EqualFold(record.Header().Name, expandedName) {
@@ -323,9 +315,19 @@ func restoreOpenConnectDNSQuestion(response *mDNS.Msg, expandedName string, orig
 func (t *DNSTransport) exchangeOnce(ctx context.Context, message *mDNS.Msg, callback func(response *mDNS.Msg, err error)) {
 	question := message.Question[0]
 	t.access.RLock()
+	addresses, hostsLoaded := t.hosts[mDNS.CanonicalName(question.Name)]
 	routes := t.routes
 	defaultResolvers := t.defaultResolvers
 	t.access.RUnlock()
+	if hostsLoaded {
+		switch question.Qtype {
+		case mDNS.TypeA, mDNS.TypeAAAA:
+			callback(dns.FixedResponse(message.Id, question, addresses, C.DefaultDNSTTL), nil)
+		default:
+			callback(dns.FixedResponseStatus(message, mDNS.RcodeSuccess), nil)
+		}
+		return
+	}
 	var matchedResolvers []adapter.DNSTransport
 	matchedDomainLength := -1
 	for _, route := range routes {
@@ -339,17 +341,17 @@ func (t *DNSTransport) exchangeOnce(ctx context.Context, message *mDNS.Msg, call
 			callback(nil, dns.RcodeNameError)
 			return
 		}
-		transport.ExchangeSequential(ctx, openConnectDNSExchangers(matchedResolvers, message), nil, callback)
+		transport.ExchangeSequential(ctx, easyConnectDNSExchangers(matchedResolvers, message), nil, callback)
 		return
 	}
 	if len(defaultResolvers) == 0 {
 		callback(nil, dns.RcodeNameError)
 		return
 	}
-	transport.ExchangeSequential(ctx, openConnectDNSExchangers(defaultResolvers, message), nil, callback)
+	transport.ExchangeSequential(ctx, easyConnectDNSExchangers(defaultResolvers, message), nil, callback)
 }
 
-func openConnectDNSExchangers(resolvers []adapter.DNSTransport, message *mDNS.Msg) []transport.AsyncExchanger {
+func easyConnectDNSExchangers(resolvers []adapter.DNSTransport, message *mDNS.Msg) []transport.AsyncExchanger {
 	return common.Map(resolvers, func(resolver adapter.DNSTransport) transport.AsyncExchanger {
 		return func(ctx context.Context, callback func(response *mDNS.Msg, err error)) {
 			resolver.ExchangeAsync(ctx, message, callback)
