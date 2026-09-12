@@ -13,10 +13,10 @@ import (
 func TestOverrideAnyTLSOptions(t *testing.T) {
 	testCases := []struct {
 		name                   string
-		clientMetadata         *string
+		clientMetadata         string
 		disableReuse           bool
 		override               *option.OverrideAnyTLSOptions
-		expectedClientMetadata *string
+		expectedClientMetadata string
 		expectedDisableReuse   bool
 	}{
 		{
@@ -24,20 +24,20 @@ func TestOverrideAnyTLSOptions(t *testing.T) {
 		},
 		{
 			name:                   "preserve value",
-			clientMetadata:         common.Ptr("original-client/1.0"),
+			clientMetadata:         "original-client/1.0",
 			disableReuse:           true,
-			expectedClientMetadata: common.Ptr("original-client/1.0"),
+			expectedClientMetadata: "original-client/1.0",
 			expectedDisableReuse:   true,
 		},
 		{
 			name:           "clear",
-			clientMetadata: common.Ptr("original-client/1.0"),
+			clientMetadata: "original-client/1.0",
 			disableReuse:   true,
 			override: &option.OverrideAnyTLSOptions{
 				ClientMetadata: common.Ptr(""),
 				DisableReuse:   common.Ptr(false),
 			},
-			expectedClientMetadata: common.Ptr(""),
+			expectedClientMetadata: "",
 		},
 		{
 			name: "replace",
@@ -45,7 +45,7 @@ func TestOverrideAnyTLSOptions(t *testing.T) {
 				ClientMetadata: common.Ptr("custom-client/1.0"),
 				DisableReuse:   common.Ptr(true),
 			},
-			expectedClientMetadata: common.Ptr("custom-client/1.0"),
+			expectedClientMetadata: "custom-client/1.0",
 			expectedDisableReuse:   true,
 		},
 	}

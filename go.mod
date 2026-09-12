@@ -95,10 +95,9 @@ replace (
 	github.com/sagernet/sing-quic => github.com/reF1nd/sing-quic v0.7.1-0.20260924162054-68e0ff4243bb
 	github.com/sagernet/sing-snell => github.com/reF1nd/sing-snell v0.0.0-20260917160408-d8a791bb5614
 	github.com/sagernet/sing-tun => github.com/reF1nd/sing-tun v0.9.6-0.20260924150700-79c79595b99d
+	github.com/sagernet/sing-vmess => github.com/xchacha20-poly1305/sing-vmess v0.2.9-0.20260805120301-d1db88b727ba
 	github.com/sagernet/wireguard-go => github.com/reF1nd/wireguard-go v0.0.8-0.20260924180017-2736c480f8ac
 )
-
-replace github.com/sagernet/sing-vmess => github.com/xchacha20-poly1305/sing-vmess v0.2.9-0.20260805120301-d1db88b727ba
 
 require (
 	filippo.io/edwards25519 v1.2.0 // indirect
