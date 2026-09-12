@@ -4,21 +4,15 @@ import (
 	"context"
 	"testing"
 
-	anytls "github.com/sagernet/sing-anytls"
 	"github.com/sagernet/sing-box/adapter"
-	C "github.com/sagernet/sing-box/constant"
 	"github.com/sagernet/sing-box/option"
-	"github.com/sagernet/sing/common"
 	"github.com/sagernet/sing/common/json"
 	"github.com/sagernet/sing/common/logger"
 
 	"github.com/stretchr/testify/require"
 )
 
-func TestClientMetadataOrDefault(t *testing.T) {
-	require.Equal(t, anytls.DefaultClientMetadata+" sing-box/"+C.Version, clientMetadataOrDefault(nil))
-	require.Empty(t, clientMetadataOrDefault(common.Ptr("")))
-	require.Equal(t, "custom", clientMetadataOrDefault(common.Ptr("custom")))
+func TestClientMetadataRoundTrip(t *testing.T) {
 	for _, data := range []string{`{}`, `{"client_metadata":""}`, `{"client_metadata":"custom"}`} {
 		var options option.AnyTLSOutboundOptions
 		require.NoError(t, json.Unmarshal([]byte(data), &options))
@@ -36,7 +30,7 @@ func TestOutboundOptions(t *testing.T) {
 			DialerOptions:               option.DialerOptions{AbstractDialerOptions: option.AbstractDialerOptions{TCPFastOpen: true}},
 			ServerOptions:               option.ServerOptions{Server: "127.0.0.1", ServerPort: 443},
 			OutboundTLSOptionsContainer: option.OutboundTLSOptionsContainer{TLS: &option.OutboundTLSOptions{Enabled: true}},
-			Password:                    "password", DisableReuse: disableReuse, ClientMetadata: common.Ptr(""),
+			Password:                    "password", DisableReuse: disableReuse, ClientMetadata: "",
 		})
 		require.NoError(t, err)
 		outbound := created.(*Outbound)
