@@ -88,12 +88,10 @@ require (
 )
 
 replace (
-	github.com/sagernet/sing-anytls => github.com/reF1nd/sing-anytls v0.0.0-20260905062301-7eeaaeb4fb19
 	github.com/sagernet/sing-snell => github.com/reF1nd/sing-snell v0.0.0-20260905064728-48a266fb2745
 	github.com/sagernet/sing-tun => github.com/reF1nd/sing-tun v0.9.4-0.20260915103927-7512d34d3229
+	github.com/sagernet/sing-vmess => github.com/xchacha20-poly1305/sing-vmess v0.2.9-0.20260805120301-d1db88b727ba
 )
-
-replace github.com/sagernet/sing-vmess => github.com/xchacha20-poly1305/sing-vmess v0.2.9-0.20260805120301-d1db88b727ba
 
 require (
 	filippo.io/edwards25519 v1.2.0 // indirect
