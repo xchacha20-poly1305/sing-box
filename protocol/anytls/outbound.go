@@ -71,7 +71,7 @@ func NewOutbound(ctx context.Context, router adapter.Router, logger log.ContextL
 
 	outbound.clientOptions = anytls.ClientOptions{
 		Password:                 options.Password,
-		ClientMetadata:           common.Ptr(clientMetadataOrDefault(options.ClientMetadata)),
+		ClientMetadata:           common.Ptr(options.ClientMetadata),
 		DisableReuse:             options.DisableReuse,
 		DialOut:                  outbound.dialOut,
 		IdleSessionCheckInterval: options.IdleSessionCheckInterval.Build(),
@@ -100,13 +100,6 @@ func (h *Outbound) Start(stage adapter.StartStage, scope *adapter.Scope) error {
 }
 
 type anytlsDialer func(ctx context.Context, destination M.Socksaddr) (net.Conn, error)
-
-func clientMetadataOrDefault(metadata *string) string {
-	if metadata == nil {
-		return anytls.DefaultClientMetadata + " sing-box/" + C.Version
-	}
-	return *metadata
-}
 
 func (d anytlsDialer) DialContext(ctx context.Context, network string, destination M.Socksaddr) (net.Conn, error) {
 	return d(ctx, destination)
