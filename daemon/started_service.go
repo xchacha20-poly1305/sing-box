@@ -68,7 +68,7 @@ type StartedService struct {
 	logSubscriber           *observable.Subscriber[*log.Entry]
 	logObserver             *observable.Observer[*log.Entry]
 	instance                *Instance
-	startedAt               time.Time
+	startedAt               startTime
 	urlTestSubscriber       *observable.Subscriber[struct{}]
 	urlTestObserver         *observable.Observer[struct{}]
 	clashModeSubscriber     *observable.Subscriber[struct{}]
@@ -308,7 +308,7 @@ func (s *StartedService) StartOrReloadService(ctx context.Context, profileConten
 		runtimeDebug.FreeOSMemory()
 		return err
 	}
-	s.startedAt = time.Now()
+	s.startedAt.Mark()
 	s.updateStatus(ServiceStatus_STARTED)
 	s.serviceAccess.Unlock()
 	runtimeDebug.FreeOSMemory()
@@ -343,7 +343,7 @@ func (s *StartedService) CloseService() error {
 		_ = instance.Close()
 	}
 	s.serviceAccess.Lock()
-	s.startedAt = time.Time{}
+	s.startedAt.Reset()
 	s.updateStatus(ServiceStatus_IDLE)
 	s.serviceAccess.Unlock()
 	runtimeDebug.FreeOSMemory()
@@ -1151,9 +1151,11 @@ func (s *StartedService) GetDeprecatedWarnings(ctx context.Context, empty *empty
 }
 
 func (s *StartedService) GetStartedAt(ctx context.Context, empty *emptypb.Empty) (*StartedAt, error) {
-	s.serviceAccess.RLock()
-	defer s.serviceAccess.RUnlock()
-	return &StartedAt{StartedAt: s.startedAt.UnixMilli()}, nil
+	startedAt := s.startedAt.Get()
+	if startedAt.IsZero() {
+		return &StartedAt{}, nil
+	}
+	return &StartedAt{StartedAt: startedAt.UnixMilli()}, nil
 }
 
 func (s *StartedService) SubscribeOutbounds(_ *emptypb.Empty, server grpc.ServerStreamingServer[OutboundList]) error {
