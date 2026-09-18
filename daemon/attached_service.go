@@ -2,7 +2,6 @@ package daemon
 
 import (
 	"context"
-	"time"
 )
 
 const defaultAttachedLogMaxLines = 3000
@@ -16,7 +15,7 @@ func NewAttachedService(ctx context.Context) *StartedService {
 	})
 	s.instance = instance
 	s.serviceStatus = &ServiceStatus{Status: ServiceStatus_STARTED}
-	s.startedAt = time.Now()
+	s.startedAt.Mark()
 	instance.urlTestHistoryStorage.AddUpdateHook(s.urlTestSubscriber)
 	if instance.clashMode != nil {
 		instance.clashMode.AddUpdateHook(s.clashModeSubscriber)
