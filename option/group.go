@@ -20,7 +20,7 @@ type URLTestOutboundOptions struct {
 
 type GroupCommonOption struct {
 	Outbounds       []string          `json:"outbounds" reference:"outbound"`
-	Providers       []string          `json:"providers" reference:"provider"`
+	Providers       []string          `json:"providers,omitempty" reference:"provider"`
 	Exclude         *badoption.Regexp `json:"exclude,omitempty"`
 	Include         *badoption.Regexp `json:"include,omitempty"`
 	UseAllProviders bool              `json:"use_all_providers,omitempty"`
