@@ -22,6 +22,7 @@
   ],
   "tls": {},
   "path": "",
+  "warp": false,
   "address": [],
   "advertise_routes": [],
   "system": false,
@@ -73,13 +74,23 @@ URI template path of the IP proxying resource, may contain the `target` and `ipp
 
 `/.well-known/masque/ip/{target}/{ipproto}/` is used by default.
 
+With `warp` enabled, `/` is used by default.
+
+### warp
+
+Accept Cloudflare WARP's modified CONNECT-IP.
+
+The server accepts `cf-connect-ip`. It does not assign addresses and does not send address or route capsules. A client's address is the source address of the IP packets it sends, and must fall inside `address`.
+
+HTTP/2 clients use `CONNECT` with `cf-connect-proto: cf-connect-ip`. An empty request path is treated as `/`. DATAGRAM capsules on HTTP/1 and HTTP/2 do not contain a context identifier. HTTP/3 uses QUIC datagrams with context identifier 0.
+
 ### address
 
 ==Required==
 
 List of IP prefixes of the tunnel network, at most one for each IP version.
 
-The address of the prefix is used by the server itself, other addresses in the prefix are assigned to clients.
+The address of the prefix is used by the server itself. Without `warp`, other addresses in the prefix are assigned to clients. With `warp`, clients choose their own addresses inside the prefix.
 
 ### advertise_routes
 

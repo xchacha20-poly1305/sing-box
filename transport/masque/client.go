@@ -37,6 +37,8 @@ type ClientOptions struct {
 	HTTPClient      *transportHTTP.Client
 	Path            string
 	AdvertiseRoutes []netip.Prefix
+	Addresses       []netip.Prefix
+	Warp            bool
 	Handler         ClientHandler
 }
 
@@ -47,6 +49,8 @@ type Client struct {
 	httpClient      *transportHTTP.Client
 	template        *Template
 	advertiseRoutes []AddressRange
+	addresses       []netip.Prefix
+	warp            bool
 	handler         ClientHandler
 	access          sync.Mutex
 	current         *clientSession
@@ -74,6 +78,9 @@ func NewClient(options ClientOptions) (*Client, error) {
 	if err != nil {
 		return nil, E.Cause(err, "build advertised routes")
 	}
+	if options.Warp && len(options.Addresses) == 0 {
+		return nil, E.New("missing address")
+	}
 	ctx, cancel := context.WithCancel(options.Context)
 	return &Client{
 		ctx:             ctx,
@@ -82,6 +89,8 @@ func NewClient(options ClientOptions) (*Client, error) {
 		httpClient:      options.HTTPClient,
 		template:        template,
 		advertiseRoutes: advertiseRoutes,
+		addresses:       options.Addresses,
+		warp:            options.Warp,
 		handler:         options.Handler,
 		stateUpdated:    make(chan struct{}),
 	}, nil
@@ -161,8 +170,12 @@ func (c *Client) loop() {
 }
 
 func (c *Client) connect() (bool, error) {
+	protocol := upgradeToken
+	if c.warp {
+		protocol = WarpProtocol
+	}
 	dialCtx, cancelDial := context.WithTimeout(c.ctx, C.TCPTimeout)
-	stream, err := c.httpClient.OpenTunnel(dialCtx, upgradeToken, c.template.Expand())
+	stream, err := c.httpClient.OpenTunnel(dialCtx, protocol, c.template.Expand())
 	cancelDial()
 	if err != nil {
 		return false, err
@@ -179,14 +192,22 @@ func (c *Client) connect() (bool, error) {
 		return false, nil
 	}
 	current.session = newSession(c.ctx, stream, current, false)
+	if c.warp {
+		current.rawDatagramCapsule = current.datagrams == nil
+		current.requireDatagrams = current.datagrams != nil
+	}
 	c.current = current
 	c.access.Unlock()
-	err = current.writeCapsule(newAddressCapsule(capsuleTypeAddressRequest, []AssignedAddress{
-		{RequestID: 1, Prefix: netip.PrefixFrom(netip.IPv4Unspecified(), 32)},
-		{RequestID: 2, Prefix: netip.PrefixFrom(netip.IPv6Unspecified(), 128)},
-	}))
-	if err == nil && len(c.advertiseRoutes) > 0 {
-		err = current.writeCapsule(newRouteCapsule(c.advertiseRoutes))
+	if c.warp {
+		err = current.updateConfiguration(Configuration{Address: c.addresses})
+	} else {
+		err = current.writeCapsule(newAddressCapsule(capsuleTypeAddressRequest, []AssignedAddress{
+			{RequestID: 1, Prefix: netip.PrefixFrom(netip.IPv4Unspecified(), 32)},
+			{RequestID: 2, Prefix: netip.PrefixFrom(netip.IPv6Unspecified(), 128)},
+		}))
+		if err == nil && len(c.advertiseRoutes) > 0 {
+			err = current.writeCapsule(newRouteCapsule(c.advertiseRoutes))
+		}
 	}
 	if err != nil {
 		current.cancel(err)
@@ -333,6 +354,9 @@ func (c *Client) WritePacketBuffers(packetBuffers []*buf.Buffer, forwarded bool)
 }
 
 func (s *clientSession) handleAddressAssign(addresses []AssignedAddress) error {
+	if s.client.warp {
+		return nil
+	}
 	var assigned []netip.Prefix
 	for _, address := range addresses {
 		if address.RequestID != 0 && address.Prefix.Addr().IsUnspecified() && address.Prefix.IsSingleIP() {
@@ -356,6 +380,9 @@ func (s *clientSession) handleAddressAssign(addresses []AssignedAddress) error {
 }
 
 func (s *clientSession) handleRouteAdvertisement(routes []AddressRange) error {
+	if s.client.warp {
+		return nil
+	}
 	s.access.Lock()
 	if s.configuration.RoutesAdvertised && slices.Equal(s.configuration.Routes, routes) {
 		s.access.Unlock()
@@ -381,6 +408,9 @@ func (s *clientSession) updateConfiguration(configuration Configuration) error {
 		s.client.access.Unlock()
 		return nil
 	}
+	s.access.Lock()
+	s.configuration = configuration
+	s.access.Unlock()
 	err := s.client.handler.UpdateConfiguration(configuration)
 	if err != nil {
 		return E.Cause(err, "update configuration")

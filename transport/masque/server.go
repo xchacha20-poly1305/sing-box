@@ -30,6 +30,7 @@ type ServerOptions struct {
 	Path            string
 	Address         []netip.Prefix
 	AdvertiseRoutes []netip.Prefix
+	Warp            bool
 	Resolve         func(ctx context.Context, domain string) ([]netip.Addr, error)
 	Handler         ServerHandler
 }
@@ -38,6 +39,7 @@ type Server struct {
 	ctx             context.Context
 	logger          logger.ContextLogger
 	template        *Template
+	warp            bool
 	pools           []*addressPool
 	inet4Address    netip.Addr
 	inet6Address    netip.Addr
@@ -71,6 +73,7 @@ func NewServer(options ServerOptions) (*Server, error) {
 		ctx:       options.Context,
 		logger:    options.Logger,
 		template:  template,
+		warp:      options.Warp,
 		resolve:   options.Resolve,
 		handler:   options.Handler,
 		addresses: make(map[netip.Addr]*serverSession),
@@ -113,7 +116,13 @@ func NewServer(options ServerOptions) (*Server, error) {
 }
 
 func (s *Server) NewTunnelRequest(ctx context.Context, request transportHTTP.TunnelRequest) {
-	scope, matched, err := s.template.Match(request.Request().URL)
+	requestURL := request.Request().URL
+	if s.warp && requestURL.EscapedPath() == "" {
+		copied := *requestURL
+		copied.Path = WarpPath
+		requestURL = &copied
+	}
+	scope, matched, err := s.template.Match(requestURL)
 	if !matched {
 		s.logger.ErrorContext(ctx, "process connection from ", request.Source(), ": unexpected path: ", request.Request().URL.Path)
 		request.Reject(http.StatusNotFound, nil)
@@ -122,6 +131,10 @@ func (s *Server) NewTunnelRequest(ctx context.Context, request transportHTTP.Tun
 	if err != nil {
 		s.logger.ErrorContext(ctx, E.Cause(err, "process connection from ", request.Source()))
 		request.Reject(http.StatusBadRequest, nil)
+		return
+	}
+	if s.warp {
+		s.serveWarpTunnel(ctx, request)
 		return
 	}
 	var builder netipx.IPSetBuilder
@@ -215,6 +228,69 @@ func (s *Server) NewTunnelRequest(ctx context.Context, request transportHTTP.Tun
 	} else {
 		s.logger.DebugContext(ctx, "tunnel from ", request.Source(), " closed")
 	}
+}
+
+func (s *Server) serveWarpTunnel(ctx context.Context, request transportHTTP.TunnelRequest) {
+	stream, err := request.Accept()
+	if err != nil {
+		s.logger.ErrorContext(ctx, E.Cause(err, "process connection from ", request.Source()))
+		return
+	}
+	current := &serverSession{
+		server:           s,
+		ctx:              ctx,
+		advertisedRoutes: addressRangesFromSet(s.advertiseRoutes),
+	}
+	current.user, _ = auth.UserFromContext[string](ctx)
+	current.session = newSession(s.ctx, stream, current, true)
+	current.rawDatagramCapsule = current.datagrams == nil
+	current.requireDatagrams = current.datagrams != nil
+	defer s.releaseSession(current)
+	if current.user != "" {
+		s.logger.InfoContext(ctx, "[", current.user, "] inbound warp tunnel from ", request.Source())
+	} else {
+		s.logger.InfoContext(ctx, "inbound warp tunnel from ", request.Source())
+	}
+	err = current.run()
+	if err != nil && !E.IsClosedOrCanceled(err) {
+		s.logger.ErrorContext(ctx, E.Cause(err, "tunnel from ", request.Source(), " closed"))
+	} else {
+		s.logger.DebugContext(ctx, "tunnel from ", request.Source(), " closed")
+	}
+}
+
+func addressRangesFromSet(set *netipx.IPSet) []AddressRange {
+	if set == nil {
+		return nil
+	}
+	ipRanges := set.Ranges()
+	routes := make([]AddressRange, 0, len(ipRanges))
+	for _, ipRange := range ipRanges {
+		routes = append(routes, AddressRange{Start: ipRange.From(), End: ipRange.To()})
+	}
+	return routes
+}
+
+func (s *Server) claimClientAddress(current *serverSession, source netip.Addr) bool {
+	s.access.Lock()
+	defer s.access.Unlock()
+	if slices.Contains(current.addresses, source) {
+		return true
+	}
+	if owner, loaded := s.addresses[source]; loaded {
+		return owner == current
+	}
+	if source == s.inet4Address || source == s.inet6Address {
+		return false
+	}
+	if !slices.ContainsFunc(s.pools, func(pool *addressPool) bool {
+		return pool.prefix.Contains(source) && pool.usable(source)
+	}) {
+		return false
+	}
+	s.addresses[source] = current
+	current.addresses = append(current.addresses, source)
+	return true
 }
 
 func (s *Server) releaseSession(current *serverSession) {
@@ -347,6 +423,9 @@ func (s *serverSession) handleAddressAssign(addresses []AssignedAddress) error {
 }
 
 func (s *serverSession) handleAddressRequest(addresses []AssignedAddress) error {
+	if s.server.warp {
+		return nil
+	}
 	return s.writeCapsule(newAddressCapsule(capsuleTypeAddressAssign, s.assignedAddresses(addresses)))
 }
 
@@ -370,12 +449,20 @@ func (s *serverSession) handlePacket(buffer *buf.Buffer) {
 		buffer.Release()
 		return
 	}
+	if s.server.warp && !s.server.claimClientAddress(s, source) {
+		reply, built := buildICMPError(buffer.Bytes(), tun.ICMPErrorSourcePolicy, s.server.inet4Address, s.server.inet6Address, 0, transportHTTP.CapsuleHeadroom)
+		buffer.Release()
+		if built {
+			s.queuePacket(reply)
+		}
+		return
+	}
 	s.server.access.RLock()
 	peerRoutes := s.peerRoutes
 	s.server.access.RUnlock()
 	errorType := tun.ICMPErrorNoRoute
 	switch {
-	case !slices.Contains(s.addresses, source) && !rangesContain(peerRoutes, source):
+	case !s.server.warp && !slices.Contains(s.addresses, source) && !rangesContain(peerRoutes, source):
 		errorType = tun.ICMPErrorSourcePolicy
 	case destination.IsLinkLocalUnicast() || destination.IsLinkLocalMulticast() || destination.IsInterfaceLocalMulticast():
 		buffer.Release()

@@ -165,6 +165,74 @@ func masqueInstanceOptions(endpointType string, endpointOptions any, proxyPort u
 	}
 }
 
+func startMASQUEWarp(t *testing.T, clientVersion int) masqueEnvironment {
+	t.Helper()
+	environment := masqueEnvironment{
+		serverProxyPort: reserveOpenVPNTCPPort(t),
+		clientProxyPort: reserveOpenVPNTCPPort(t),
+	}
+	masquePort := reserveOpenVPNEchoPort(t)
+	environment.serverPort = masquePort
+	_, certPem, keyPem := createSelfSignedCertificate(t, "example.org")
+	users := []auth.User{{Username: "sekai", Password: "password"}}
+	startInstance(t, masqueInstanceOptions(C.TypeMASQUEServer, &option.MASQUEServerEndpointOptions{
+		ListenOptions: option.ListenOptions{
+			Listen:     common.Ptr(badoption.Addr(netip.MustParseAddr("127.0.0.1"))),
+			ListenPort: masquePort,
+		},
+		MASQUEEndpointOptions: option.MASQUEEndpointOptions{MTU: 0},
+		Users:                 users,
+		Warp:                  true,
+		InboundTLSOptionsContainer: option.InboundTLSOptionsContainer{
+			TLS: &option.InboundTLSOptions{
+				Enabled:         true,
+				ServerName:      "example.org",
+				CertificatePath: certPem,
+				KeyPath:         keyPem,
+			},
+		},
+		Address: []netip.Prefix{netip.MustParsePrefix(masqueServerAddress + "/24")},
+	}, environment.serverProxyPort, ""))
+	startInstance(t, masqueInstanceOptions(C.TypeMASQUEClient, &option.MASQUEClientEndpointOptions{
+		ServerOptions: option.ServerOptions{
+			Server:     "127.0.0.1",
+			ServerPort: masquePort,
+		},
+		MASQUEEndpointOptions: option.MASQUEEndpointOptions{},
+		Username:              users[0].Username,
+		Password:              users[0].Password,
+		OutboundTLSOptionsContainer: option.OutboundTLSOptionsContainer{
+			TLS: &option.OutboundTLSOptions{
+				Enabled:         true,
+				ServerName:      "example.org",
+				CertificatePath: certPem,
+			},
+		},
+		Version:                clientVersion,
+		DisableVersionFallback: true,
+		Warp:                   true,
+		Address:                []netip.Prefix{netip.MustParsePrefix("10.8.0.2/32")},
+	}, environment.clientProxyPort, "127.0.0.1"))
+	waitForOpenVPNClientReady(t, environment.clientProxyPort, reserveOpenVPNEchoPort(t), masqueServerAddress)
+	return environment
+}
+
+func TestMASQUEWarp(t *testing.T) {
+	for _, testCase := range []struct {
+		name    string
+		version int
+	}{
+		{"HTTP3", 3},
+		{"HTTP2", 2},
+		{"HTTP1", 1},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			environment := startMASQUEWarp(t, testCase.version)
+			testSuitOpenVPN(t, environment.clientProxyPort, reserveOpenVPNEchoPort(t), masqueServerAddress)
+		})
+	}
+}
+
 func TestMASQUESelfToSelf(t *testing.T) {
 	for _, testCase := range []struct {
 		name    string

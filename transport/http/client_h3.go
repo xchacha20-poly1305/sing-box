@@ -16,10 +16,18 @@ import (
 	"github.com/sagernet/quic-go/http3"
 	"github.com/sagernet/sing-box/common/httpclient"
 	"github.com/sagernet/sing-quic"
+	"github.com/sagernet/sing/common/bufio"
 	E "github.com/sagernet/sing/common/exceptions"
 	M "github.com/sagernet/sing/common/metadata"
 	N "github.com/sagernet/sing/common/network"
 	aTLS "github.com/sagernet/sing/common/tls"
+)
+
+const (
+	// SETTINGS_H3_DATAGRAM from draft-ietf-masque-h3-datagram-00. Cloudflare WARP still sends it.
+	warpDatagramDraftSetting = 0x276
+	// Cloudflare WARP answers with PROTOCOL_VIOLATION unless the source connection ID is 20 bytes.
+	warpConnectionIDLength = 20
 )
 
 func init() {
@@ -35,6 +43,7 @@ type http3ClientImpl struct {
 	authorization string
 	quicConfig    *quic.Config
 	transport     *http3.Transport
+	warp          bool
 	access        sync.Mutex
 	conn          *http3.ClientConn
 	rawConn       net.Conn
@@ -50,6 +59,9 @@ func newHTTP3Client(options ClientOptions, authorization string) (http3Client, e
 	}
 	quicConfig := qtls.ConfigWithGSO(httpclient.NewQUICConfig(options.HTTP3Options), dialer)
 	quicConfig.EnableDatagrams = true
+	if handshakeTimeout := options.TLSConfig.HandshakeTimeout(); handshakeTimeout > 0 {
+		quicConfig.HandshakeIdleTimeout = handshakeTimeout
+	}
 	headers := options.Headers.Clone()
 	authority := options.Server.String()
 	if options.Authority != "" {
@@ -61,6 +73,10 @@ func newHTTP3Client(options ClientOptions, authorization string) (http3Client, e
 		}
 		headers.Del("Host")
 	}
+	transport := &http3.Transport{EnableDatagrams: true, DisableCompression: true}
+	if options.Warp {
+		transport.AdditionalSettings = map[uint64]uint64{warpDatagramDraftSetting: 1}
+	}
 	return &http3ClientImpl{
 		dialer:        dialer,
 		tlsConfig:     options.TLSConfig,
@@ -69,7 +85,8 @@ func newHTTP3Client(options ClientOptions, authorization string) (http3Client, e
 		headers:       headers,
 		authorization: authorization,
 		quicConfig:    quicConfig,
-		transport:     &http3.Transport{EnableDatagrams: true, DisableCompression: true},
+		transport:     transport,
+		warp:          options.Warp,
 	}, nil
 }
 
@@ -90,7 +107,7 @@ func (c *http3ClientImpl) acquire(ctx context.Context) (*http3.ClientConn, error
 		}
 		return nil, E.Cause1(ErrHTTP3Unavailable, err)
 	}
-	quicConn, err := qtls.DialEarly(ctx, rawConn, c.tlsConfig, c.quicConfig)
+	quicConn, err := c.dialQUIC(ctx, rawConn)
 	if err != nil {
 		rawConn.Close()
 		if ctx.Err() != nil {
@@ -101,6 +118,30 @@ func (c *http3ClientImpl) acquire(ctx context.Context) (*http3.ClientConn, error
 	c.conn = c.transport.NewClientConn(quicConn)
 	c.rawConn = rawConn
 	return c.conn, nil
+}
+
+func (c *http3ClientImpl) dialQUIC(ctx context.Context, rawConn net.Conn) (*quic.Conn, error) {
+	if !c.warp {
+		return qtls.DialEarly(ctx, rawConn, c.tlsConfig, c.quicConfig)
+	}
+	// quic.DialEarlyConn offers no way to choose the connection ID length, so a single-use
+	// Transport is built over rawConn, adapted to a PacketConn to keep its wrappers in the path.
+	tlsConfig, err := c.tlsConfig.STDConfig()
+	if err != nil {
+		return nil, err
+	}
+	remoteAddr := M.SocksaddrFromNet(rawConn.RemoteAddr())
+	transport := &quic.Transport{
+		Conn:               bufio.NewUnbindPacketConnWithAddr(rawConn, remoteAddr),
+		ConnectionIDLength: warpConnectionIDLength,
+	}
+	transport.SetSingleUse(true)
+	quicConn, err := transport.DialEarly(ctx, remoteAddr.UDPAddr(), tlsConfig, c.quicConfig)
+	if err != nil {
+		_ = transport.Close()
+		return nil, qtls.WrapError(err)
+	}
+	return quicConn, nil
 }
 
 func (c *http3ClientImpl) openStream(ctx context.Context, request *http.Request) (*http3.RequestStream, *http3.ClientConn, error) {

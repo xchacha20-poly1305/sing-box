@@ -32,6 +32,9 @@ The new [MASQUE Client](/configuration/endpoint/masque-client/) and
 (CONNECT-IP), supporting HTTP/1.1, HTTP/2 and HTTP/3, address assignment and route advertisement.
 They can use the internal network stack or a system TUN interface.
 
+The `warp` option speaks Cloudflare WARP's modified CONNECT-IP (`cf-connect-ip`),
+see [MASQUE Client](/configuration/endpoint/masque-client/#warp) and [MASQUE Server](/configuration/endpoint/masque-server/#warp).
+
 **2**:
 
 The HTTP proxy implementation has been rewritten, adding HTTP/2, HTTP/3 and UDP proxying through

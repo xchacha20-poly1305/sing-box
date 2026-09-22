@@ -38,6 +38,8 @@ type _MASQUEClientEndpointOptions struct {
 	Headers                badoption.HTTPHeader             `json:"headers,omitempty"`
 	Version                int                              `json:"version,omitempty" enum:"0,1,2,3"`
 	DisableVersionFallback bool                             `json:"disable_version_fallback,omitempty"`
+	Warp                   bool                             `json:"warp,omitempty"`
+	Address                badoption.Listable[netip.Prefix] `json:"address,omitempty"`
 	AdvertiseRoutes        badoption.Listable[netip.Prefix] `json:"advertise_routes,omitempty"`
 	UDPTimeout             badoption.Duration               `json:"udp_timeout,omitempty"`
 	OnDemand               bool                             `json:"on_demand,omitempty"`
@@ -86,6 +88,7 @@ type _MASQUEServerEndpointOptions struct {
 	Version badoption.Listable[int] `json:"version,omitempty" enum:"1,2,3"`
 	InboundTLSOptionsContainer
 	Path            string                           `json:"path,omitempty"`
+	Warp            bool                             `json:"warp,omitempty"`
 	Address         badoption.Listable[netip.Prefix] `json:"address"`
 	AdvertiseRoutes badoption.Listable[netip.Prefix] `json:"advertise_routes,omitempty"`
 	HTTP2Options    HTTP2Options                     `json:"-"`

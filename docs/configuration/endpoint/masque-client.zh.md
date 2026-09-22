@@ -17,6 +17,8 @@
   "password": "",
   "path": "",
   "headers": {},
+  "warp": false,
+  "address": [],
   "version": 0,
   "disable_version_fallback": false,
   "tls": {},
@@ -69,6 +71,22 @@ IP 代理资源的 URI 模板路径，可以包含 `target` 和 `ipproto` 变量
 ### headers
 
 HTTP 请求的额外标头。
+
+### warp
+
+使用 Cloudflare WARP 魔改过的 CONNECT-IP。
+
+隧道协议为 `cf-connect-ip`。未设置 `path` 时路径为 `/`，未设置 `Host` 标头时请求权威为 `cloudflareaccess.com`。不会交换地址和路由胶囊。`address` 填写设备被分配的 IPv4 和 IPv6 地址。HTTP 隧道建立后立即发送 IP 数据包。
+
+HTTP/3 还会发送草案设置 `SETTINGS_H3_DATAGRAM`（`0x276`），并使用 20 字节的 QUIC 连接 ID。数据包放在上下文标识为 0 的 QUIC 数据报里。HTTP/2 发送带 `cf-connect-proto: cf-connect-ip` 和 `pq-enabled: false` 的 `CONNECT`，数据包放在不含上下文标识的 DATAGRAM 胶囊里。HTTP/1 使用同样的胶囊。Cloudflare 的端点使用 HTTP/3 和 HTTP/2。
+
+WARP 用 TLS 客户端证书认证设备。将 `tls.server_name` 设为 `consumer-masque.cloudflareclient.com`。端点证书不是签发给这个名字的：启用 `tls.insecure`，并用 `tls.certificate_public_key_sha256` 固定端点公钥。
+
+### address
+
+隧道接口的本地地址。
+
+启用 `warp` 时必填。
 
 ### version
 
