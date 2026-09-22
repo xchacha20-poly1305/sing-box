@@ -26,6 +26,12 @@ type http2ClientConn struct {
 	http2GenericClientConn
 }
 
+func initializeHTTP2Transport(transport *http2.Transport) {
+	// Initialize net/http's HTTP/2 transport before using its internal
+	// connection constructor. No connections have been opened yet.
+	http2TransportInit(transport).CloseIdleConnections()
+}
+
 func newHTTP2ClientConn(transport *http2.Transport, conn net.Conn) (*http2ClientConn, error) {
 	clientConn, err := transportHTTP2NewClientConn(http2TransportInit(transport), conn, nil)
 	if err != nil {

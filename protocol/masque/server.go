@@ -1,6 +1,7 @@
 package masque
 
 import (
+	"cmp"
 	"context"
 	"math"
 	"net"
@@ -106,12 +107,19 @@ func NewServerEndpoint(ctx context.Context, router adapter.Router, logger log.Co
 		h3CongestionControl:  options.H3CongestionControl,
 		localAddresses:       options.Address,
 	}
+	path := options.Path
+	protocol := "connect-ip"
+	if options.Warp {
+		protocol = masque.WarpProtocol
+		path = cmp.Or(path, masque.WarpPath)
+	}
 	server, err := masque.NewServer(masque.ServerOptions{
 		Context:         ctx,
 		Logger:          logger,
-		Path:            options.Path,
+		Path:            path,
 		Address:         options.Address,
 		AdvertiseRoutes: options.AdvertiseRoutes,
+		Warp:            options.Warp,
 		Resolve:         serverEndpoint.resolve,
 		Handler:         serverEndpoint,
 	})
@@ -125,7 +133,7 @@ func NewServerEndpoint(ctx context.Context, router adapter.Router, logger log.Co
 		HTTP1:         serveHTTP1,
 		HTTP2:         serveHTTP2,
 		HTTP2Options:  options.HTTP2Options,
-		Tunnels:       map[string]http.TunnelHandler{"connect-ip": server},
+		Tunnels:       map[string]http.TunnelHandler{protocol: server},
 	})
 	if options.TLS != nil {
 		tlsConfig, tlsErr := tls.NewServerWithOptions(tls.ServerOptions{

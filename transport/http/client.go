@@ -50,6 +50,7 @@ type ClientOptions struct {
 	Version                int
 	DisableVersionFallback bool
 	UDPFastOpen            bool
+	Warp                   bool
 	HTTP2Options           option.HTTP2Options
 	HTTP3Options           option.QUICOptions
 	H3CongestionControl    option.H3CongestionControl
@@ -83,6 +84,7 @@ type Client struct {
 	version                         int
 	disableVersionFallback          bool
 	udpFastOpen                     bool
+	warp                            bool
 	http2Transport                  *http2.Transport
 	http2Access                     sync.Mutex
 	http2Sessions                   []*http2Session
@@ -158,6 +160,7 @@ func NewClient(options ClientOptions) (*Client, error) {
 		version:                options.Version,
 		disableVersionFallback: options.DisableVersionFallback,
 		udpFastOpen:            options.UDPFastOpen,
+		warp:                   options.Warp,
 	}
 	if client.headers != nil {
 		client.host = client.headers.Get("Host")
@@ -183,6 +186,7 @@ func NewClient(options ClientOptions) (*Client, error) {
 			return nil, err
 		}
 		http2Transport.DisableCompression = true
+		initializeHTTP2Transport(http2Transport)
 		client.http2Transport = http2Transport
 	} else if client.version == 2 && options.DisableVersionFallback {
 		return nil, E.New("HTTP/2 requires TLS")

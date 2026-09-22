@@ -93,6 +93,11 @@ func (h *httpHandler) ServeHTTP(writer http.ResponseWriter, request *http.Reques
 		if protocol == "" && request.ProtoMajor == 3 && !strings.HasPrefix(request.Proto, "HTTP/") {
 			protocol = request.Proto
 		}
+		if protocol == "" {
+			if candidate := request.Header.Get("Cf-Connect-Proto"); h.server.tunnels[candidate] != nil {
+				protocol = candidate
+			}
+		}
 	}
 	tunnelHandler := h.server.tunnels[protocol]
 	if tunnelHandler != nil {

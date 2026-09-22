@@ -13,6 +13,8 @@ type http2ClientConn struct {
 	*http2.ClientConn
 }
 
+func initializeHTTP2Transport(*http2.Transport) {}
+
 func newHTTP2ClientConn(transport *http2.Transport, conn net.Conn) (*http2ClientConn, error) {
 	clientConn, err := transport.NewClientConn(conn)
 	if err != nil {

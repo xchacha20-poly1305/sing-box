@@ -55,10 +55,15 @@ func (c *Client) acquireHTTP2(ctx context.Context) (*http2Session, net.Conn, err
 	}
 }
 
+func (c *Client) acceptsHTTP2Protocol(protocol string) bool {
+	// Cloudflare WARP endpoints negotiate no ALPN protocol but speak HTTP/2.
+	return protocol == http2.NextProtoTLS || (c.warp && protocol == "")
+}
+
 func (c *Client) dialHTTP2(ctx context.Context, offer *dialOffer) (*http2Session, net.Conn, error) {
 	conn, err := c.tlsDialer.DialTLSContext(adapter.ContextForMultiplexSession(ctx), c.server)
 	var clientConn *http2ClientConn
-	if err == nil && conn.ConnectionState().NegotiatedProtocol == http2.NextProtoTLS {
+	if err == nil && c.acceptsHTTP2Protocol(conn.ConnectionState().NegotiatedProtocol) {
 		clientConn, err = newHTTP2ClientConn(c.http2Transport, conn)
 		if err != nil {
 			conn.Close()

@@ -45,6 +45,9 @@ type _MASQUEClientEndpointOptions struct {
 	OnDemand               bool                 `json:"on_demand,omitempty"`
 	HTTP2Options           HTTP2Options         `json:"-"`
 	HTTP3Options           QUICOptions          `json:"-"`
+
+	Warp    bool                             `json:"warp,omitempty"`
+	Address badoption.Listable[netip.Prefix] `json:"address,omitempty"`
 }
 
 type MASQUEClientEndpointOptions _MASQUEClientEndpointOptions
@@ -101,6 +104,8 @@ type _MASQUEServerEndpointOptions struct {
 	AdvertiseRoutes []netip.Prefix                   `json:"advertise_routes,omitempty"`
 	HTTP2Options    HTTP2Options                     `json:"-"`
 	HTTP3Options    QUICOptions                      `json:"-"`
+
+	Warp bool `json:"warp,omitempty"`
 }
 
 type MASQUEServerEndpointOptions _MASQUEServerEndpointOptions

@@ -4454,6 +4454,22 @@
             "on_demand": {
               "type": "boolean"
             },
+            "warp": {
+              "type": "boolean"
+            },
+            "address": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/IPPrefix"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/IPPrefix"
+                  }
+                }
+              ]
+            },
             "idle_timeout": {
               "$ref": "#/$defs/Duration"
             },
@@ -4702,6 +4718,9 @@
               "items": {
                 "$ref": "#/$defs/IPPrefix"
               }
+            },
+            "warp": {
+              "type": "boolean"
             },
             "idle_timeout": {
               "$ref": "#/$defs/Duration"
