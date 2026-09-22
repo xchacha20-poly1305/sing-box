@@ -49,6 +49,7 @@ type ClientOptions struct {
 	Headers                http.Header
 	Version                int
 	DisableVersionFallback bool
+	Warp                   bool
 	HTTP2Options           option.HTTP2Options
 	HTTP3Options           option.QUICOptions
 }
@@ -74,6 +75,7 @@ type Client struct {
 	headers                         http.Header
 	version                         int
 	disableVersionFallback          bool
+	warp                            bool
 	http2Transport                  *http2.Transport
 	http2Access                     sync.Mutex
 	http2Conns                      []*http2ClientConn
@@ -133,6 +135,7 @@ func NewClient(options ClientOptions) (*Client, error) {
 		headers:                options.Headers.Clone(),
 		version:                options.Version,
 		disableVersionFallback: options.DisableVersionFallback,
+		warp:                   options.Warp,
 	}
 	if client.headers != nil {
 		client.host = client.headers.Get("Host")

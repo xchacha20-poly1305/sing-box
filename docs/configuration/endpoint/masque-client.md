@@ -17,6 +17,8 @@
   "password": "",
   "path": "",
   "headers": {},
+  "warp": false,
+  "address": [],
   "version": 0,
   "disable_version_fallback": false,
   "tls": {},
@@ -69,6 +71,22 @@ URI template path of the IP proxying resource, may contain the `target` and `ipp
 ### headers
 
 Extra headers of HTTP request.
+
+### warp
+
+Use Cloudflare WARP's modified CONNECT-IP.
+
+The tunnel protocol is `cf-connect-ip`. The path defaults to `/` and the request authority defaults to `cloudflareaccess.com`, unless `path` or a `Host` header is set. Address and route capsules are not exchanged. Set `address` to the IPv4 and IPv6 addresses assigned to the device. IP packets are sent as soon as the HTTP tunnel is established.
+
+HTTP/3 also sends the draft setting `SETTINGS_H3_DATAGRAM` (`0x276`) and uses 20-byte QUIC connection IDs. Packets are carried in QUIC datagrams with context identifier 0. HTTP/2 sends `CONNECT` with `cf-connect-proto: cf-connect-ip` and `pq-enabled: false`, and carries packets in DATAGRAM capsules without a context identifier. HTTP/1 uses the same capsules. Cloudflare's endpoints speak HTTP/3 and HTTP/2.
+
+WARP authenticates the device with a TLS client certificate. Set `tls.server_name` to `consumer-masque.cloudflareclient.com`. The endpoint certificate is not issued for that name: enable `tls.insecure` and pin the endpoint key with `tls.certificate_public_key_sha256`.
+
+### address
+
+Local addresses of the tunnel interface.
+
+Required when `warp` is enabled.
 
 ### version
 

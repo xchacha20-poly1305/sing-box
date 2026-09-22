@@ -1,6 +1,7 @@
 package masque
 
 import (
+	"cmp"
 	"context"
 	"math"
 	"net"
@@ -102,7 +103,16 @@ func NewClientEndpoint(ctx context.Context, router adapter.Router, logger log.Co
 	headers := options.Headers.Build()
 	authority := headers.Get("Host")
 	headers.Del("Host")
-	if authority == "" {
+	if options.Warp {
+		options.Path = cmp.Or(options.Path, masque.WarpPath)
+		authority = cmp.Or(authority, masque.WarpAuthority)
+		if _, loaded := headers["User-Agent"]; !loaded {
+			headers["User-Agent"] = []string{""}
+		}
+		if len(options.Address) == 0 {
+			return nil, E.New("missing address")
+		}
+	} else if authority == "" {
 		server := options.ServerOptions.Build()
 		authority = server.String()
 		if server.Port == 443 {
@@ -119,6 +129,7 @@ func NewClientEndpoint(ctx context.Context, router adapter.Router, logger log.Co
 		Headers:                headers,
 		Version:                version,
 		DisableVersionFallback: options.DisableVersionFallback,
+		Warp:                   options.Warp,
 		HTTP2Options:           http2Options,
 		HTTP3Options:           options.HTTP3Options,
 	})
@@ -145,6 +156,8 @@ func NewClientEndpoint(ctx context.Context, router adapter.Router, logger log.Co
 		HTTPClient:      httpClient,
 		Path:            options.Path,
 		AdvertiseRoutes: options.AdvertiseRoutes,
+		Addresses:       options.Address,
+		Warp:            options.Warp,
 		Handler:         clientEndpoint,
 	})
 	if err != nil {

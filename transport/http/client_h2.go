@@ -28,7 +28,9 @@ func (c *Client) acquireHTTP2(ctx context.Context) (*http2ClientConn, net.Conn, 
 	if err != nil {
 		return nil, nil, err
 	}
-	if conn.ConnectionState().NegotiatedProtocol != http2.NextProtoTLS {
+	negotiatedProtocol := conn.ConnectionState().NegotiatedProtocol
+	// Cloudflare WARP endpoints negotiate no ALPN protocol but speak HTTP/2.
+	if negotiatedProtocol != http2.NextProtoTLS && !(c.warp && negotiatedProtocol == "") {
 		if !c.disableVersionFallback {
 			c.http2Unsupported.Store(true)
 		}

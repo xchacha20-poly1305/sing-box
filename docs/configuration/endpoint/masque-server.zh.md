@@ -22,6 +22,7 @@
   ],
   "tls": {},
   "path": "",
+  "warp": false,
   "address": [],
   "advertise_routes": [],
   "system": false,
@@ -73,13 +74,23 @@ IP 代理资源的 URI 模板路径，可以包含 `target` 和 `ipproto` 变量
 
 默认使用 `/.well-known/masque/ip/{target}/{ipproto}/`。
 
+启用 `warp` 时默认使用 `/`。
+
+### warp
+
+接受 Cloudflare WARP 魔改过的 CONNECT-IP。
+
+服务器接受 `cf-connect-ip`。它不分配地址，也不发送地址或路由胶囊。客户端的地址取自它发出的 IP 数据包的源地址，并且必须落在 `address` 内。
+
+HTTP/2 客户端使用带 `cf-connect-proto: cf-connect-ip` 的 `CONNECT`。空的请求路径按 `/` 处理。HTTP/1 和 HTTP/2 的 DATAGRAM 胶囊不含上下文标识。HTTP/3 使用上下文标识为 0 的 QUIC 数据报。
+
 ### address
 
 ==必填==
 
 隧道网络的 IP 前缀列表，每个 IP 版本最多一个。
 
-前缀中的地址由服务器自己使用，前缀内的其他地址分配给客户端。
+前缀中的地址由服务器自己使用。未启用 `warp` 时，前缀内的其他地址分配给客户端。启用 `warp` 时，客户端使用前缀内自己选择的地址。
 
 ### advertise_routes
 

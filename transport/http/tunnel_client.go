@@ -22,6 +22,7 @@ type tunnelRequest struct {
 	url                 *url.URL
 	destination         M.Socksaddr
 	originAuthorization bool
+	warp                bool
 }
 
 func (c *Client) OpenTunnel(ctx context.Context, protocol string, path string) (io.ReadWriteCloser, error) {
@@ -34,6 +35,7 @@ func (c *Client) OpenTunnel(ctx context.Context, protocol string, path string) (
 		url:                 &url.URL{Path: requestURL.Path, RawPath: requestURL.RawPath, RawQuery: requestURL.RawQuery},
 		destination:         c.server,
 		originAuthorization: true,
+		warp:                c.warp,
 	})
 	if err != nil {
 		return nil, err
@@ -146,14 +148,23 @@ func (c *Client) openTunnelHTTP1(ctx context.Context, conn net.Conn, request tun
 func (c *Client) openTunnelHTTP2(ctx context.Context, clientConn *http2ClientConn, request tunnelRequest) (net.Conn, error) {
 	requestURL := *request.url
 	requestURL.Scheme = "https"
-	requestURL.Host = c.authority()
+	host := c.authority()
+	if request.warp && !strings.Contains(host, ":") {
+		host = net.JoinHostPort(host, "443")
+	}
+	requestURL.Host = host
 	httpRequest := &http.Request{
 		Method: http.MethodConnect,
 		URL:    &requestURL,
-		Host:   c.authority(),
+		Host:   host,
 		Header: buildRequestHeader(c.headers, c.authorization, request.originAuthorization),
 	}
-	httpRequest.Header.Set(":protocol", request.protocol)
+	if request.warp {
+		httpRequest.Header.Set("cf-connect-proto", request.protocol)
+		httpRequest.Header.Set("pq-enabled", "false")
+	} else {
+		httpRequest.Header.Set(":protocol", request.protocol)
+	}
 	httpRequest.Header.Set("Capsule-Protocol", "?1")
 	streamConn, err := c.roundTripHTTP2(ctx, clientConn, httpRequest, request.destination)
 	if err != nil {
