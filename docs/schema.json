@@ -4432,6 +4432,22 @@
             "disable_version_fallback": {
               "type": "boolean"
             },
+            "warp": {
+              "type": "boolean"
+            },
+            "address": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/IPPrefix"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/IPPrefix"
+                  }
+                }
+              ]
+            },
             "advertise_routes": {
               "type": "array",
               "items": {
@@ -4673,6 +4689,9 @@
             },
             "path": {
               "type": "string"
+            },
+            "warp": {
+              "type": "boolean"
             },
             "address": {
               "anyOf": [

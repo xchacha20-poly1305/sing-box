@@ -15,6 +15,9 @@ import (
 
 const (
 	upgradeToken       = "connect-ip"
+	WarpProtocol       = "cf-connect-ip"
+	WarpAuthority      = "cloudflareaccess.com"
+	WarpPath           = "/"
 	DefaultMTU         = 1280
 	PacketHeadroom     = transportHTTP.CapsuleHeadroom
 	QUICPacketOverhead = 51
@@ -31,14 +34,16 @@ type sessionHandler interface {
 }
 
 type session struct {
-	ctx            context.Context
-	cancel         context.CancelCauseFunc
-	stream         io.ReadWriteCloser
-	datagrams      transportHTTP.DatagramStream
-	reader         *std_bufio.Reader
-	handler        sessionHandler
-	packetHeadroom func() int
-	writeAccess    sync.Mutex
+	ctx                context.Context
+	cancel             context.CancelCauseFunc
+	stream             io.ReadWriteCloser
+	datagrams          transportHTTP.DatagramStream
+	reader             *std_bufio.Reader
+	handler            sessionHandler
+	packetHeadroom     func() int
+	writeAccess        sync.Mutex
+	rawDatagramCapsule bool
+	requireDatagrams   bool
 }
 
 func newSession(ctx context.Context, stream io.ReadWriteCloser, handler sessionHandler, packetHeadroom func() int) *session {
@@ -119,22 +124,28 @@ func (s *session) loopCapsule() error {
 }
 
 func (s *session) readDatagramCapsule(length int) error {
-	contextID, contextLength, err := transportHTTP.ReadVarint(s.reader)
-	if err != nil {
-		return err
-	}
-	if contextLength > length {
-		return E.New("malformed datagram capsule")
-	}
-	payloadLength := length - contextLength
-	if contextID != 0 || payloadLength == 0 || payloadLength > maxPacketSize {
-		_, err = s.reader.Discard(payloadLength)
+	payloadLength := length
+	if !s.rawDatagramCapsule {
+		contextID, contextLength, err := transportHTTP.ReadVarint(s.reader)
+		if err != nil {
+			return err
+		}
+		if contextLength > length {
+			return E.New("malformed datagram capsule")
+		}
+		payloadLength = length - contextLength
+		if contextID != 0 || payloadLength == 0 || payloadLength > maxPacketSize {
+			_, err = s.reader.Discard(payloadLength)
+			return err
+		}
+	} else if payloadLength == 0 || payloadLength > maxPacketSize {
+		_, err := s.reader.Discard(payloadLength)
 		return err
 	}
 	headroom := s.packetHeadroom()
 	buffer := buf.NewSize(headroom + payloadLength)
 	buffer.Resize(headroom, 0)
-	_, err = buffer.ReadFullFrom(s.reader, payloadLength)
+	_, err := buffer.ReadFullFrom(s.reader, payloadLength)
 	if err != nil {
 		buffer.Release()
 		return err
@@ -188,6 +199,11 @@ func (s *session) writeCapsule(capsule *buf.Buffer) error {
 }
 
 func (s *session) writePackets(buffers []*buf.Buffer) error {
+	if s.rawDatagramCapsule && s.datagrams == nil {
+		s.writeAccess.Lock()
+		defer s.writeAccess.Unlock()
+		return transportHTTP.WriteDatagramCapsules(s.stream, buffers)
+	}
 	capsules := buffers[:0]
 	for i, buffer := range buffers {
 		datagram := transportHTTP.PrependContextID(buffer)
@@ -212,6 +228,10 @@ func (s *session) writePackets(buffers []*buf.Buffer) error {
 				}
 				err = E.Cause1(transportHTTP.ErrHTTP3Unavailable, E.New("QUIC connection is unable to carry ", minimumLinkMTU, " bytes packets"))
 			case errors.Is(err, transportHTTP.ErrDatagramUnsupported):
+				if s.requireDatagrams {
+					err = E.New("QUIC connection does not support datagrams")
+					break
+				}
 				capsules = append(capsules, datagram)
 				continue
 			}
