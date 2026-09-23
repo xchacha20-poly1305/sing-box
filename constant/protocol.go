@@ -11,6 +11,8 @@ const (
 	ProtocolSSH        = "ssh"
 	ProtocolRDP        = "rdp"
 	ProtocolNTP        = "ntp"
+
+	ProtocolDouyinPCDN = "douyin-pcdn"
 )
 
 const (

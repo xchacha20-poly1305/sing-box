@@ -351,6 +351,27 @@ For extended features
 }
 ```
 
+# 抖音 PCDN sniff
+
+```json
+{
+  "route": {
+    "rules": [
+      {
+        "action": "sniff"
+      },
+      {
+        "protocol": "douyin-pcdn",
+        "action": "reject",
+        "no_drop": true
+      }
+    ]
+  }
+}
+```
+
+国民流氓软件。sniff 实现暂时很粗糙，大概能用。或者直接屏蔽 8567-8569 端口的 UDP。
+
 ## License
 
 ```

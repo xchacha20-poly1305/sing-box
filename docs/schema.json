@@ -20003,7 +20003,8 @@
                     "dtls",
                     "ssh",
                     "rdp",
-                    "ntp"
+                    "ntp",
+                    "douyin-pcdn"
                   ]
                 },
                 {
@@ -20020,7 +20021,8 @@
                       "dtls",
                       "ssh",
                       "rdp",
-                      "ntp"
+                      "ntp",
+                      "douyin-pcdn"
                     ]
                   }
                 }

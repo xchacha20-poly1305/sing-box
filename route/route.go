@@ -39,6 +39,8 @@ var defaultPacketSniffers = []sniff.PacketSniffer{
 	sniff.UDPTracker,
 	sniff.DTLSRecord,
 	sniff.NTP,
+
+	sniff.DouyinPCDN,
 	// Fall back to the short-header heuristic after more specific sniffers.
 	sniff.QUICShortHeader,
 }
