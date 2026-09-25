@@ -409,6 +409,8 @@ github.com/vishvananda/netns v0.0.5 h1:DfiHV+j8bA32MFM7bfEunvT8IAqQ/NzSJHtcmW5zd
 github.com/vishvananda/netns v0.0.5/go.mod h1:SpkAiCQRtJ6TvvxPnOSyH3BMl6unz3xZlaprSwhNNJM=
 github.com/x448/float16 v0.8.4 h1:qLwI1I70+NjRFUR3zs1JPUCgaCXSh3SW62uAKT1mSBM=
 github.com/x448/float16 v0.8.4/go.mod h1:14CWIYCyZA/cWjXOioeEpHeN/83MdbZDRQHoFcYsOfg=
+github.com/xchacha20-poly1305/sing-easyconnect v0.0.0-20260920130336-50752d75289c h1:x/u65t7mka4Z2ZqbtVnoi3hoMlIBqM8ZO5uLvvBgxYY=
+github.com/xchacha20-poly1305/sing-easyconnect v0.0.0-20260920130336-50752d75289c/go.mod h1:q5lvSpV3oyyRSl1ZZTyD1sm3aYdEmKPT9pM8+DVvpoA=
 github.com/xchacha20-poly1305/sing-trusttunnel v0.4.0-beta.1.0.20261126021110-c9ea50baaec1 h1:eV2J9u8JurOBYJSYslma1bfN273tG1yXrEExeAi4b1Y=
 github.com/xchacha20-poly1305/sing-trusttunnel v0.4.0-beta.1.0.20261126021110-c9ea50baaec1/go.mod h1:Ql1muUksFoPJs55ZH8pn7wTITWngtDIq1ALMPIHSKDM=
 github.com/xchacha20-poly1305/sing-vmess v0.2.9-0.20261125043036-1952e350d5f0 h1:ggb1sC0YCoByDJPItH0p0qbP7+0Gv/01bHTZV7QwUOI=

@@ -287,6 +287,70 @@ For extended features
 * **fallback_url** and **fallback_http_client**: URL to fallback and HTTP client to forward request.
   If `fallback_url` scheme is `file` or empty, fallback to local fs.
 
+# easyconnect
+
+市面上流行的 EasyConnect 实现基本上均源于 [NJUConnect](https://github.com/lyc8503/NJUConnect) 的逆向实现。
+然而，此实现仅针对旧版服务端，新版服务端 (`7.6.x`) 进行了较大的破坏性变更，与此不兼容。
+
+运行原版太流氓，docker 版太重，遂自行逆向。 此实现仅针对笔者使用的服务器进行逆向适配，不适合所有环境。
+
+推荐的使用方式：放入 selector 管理并开启 `on_demand`，要用的时候再选中 + DNS prefer 自动管理 DNS。以下是自用的配置示例：
+
+```json5
+{
+  "dns": {
+    "server": [
+      {
+        "type": "easyconnect",
+        "tag": "dns-easyconnect",
+        "endpoint": "ep-easyconnect"
+      }
+    ],
+    "rules": [
+      {
+        "preferred_by": "dns-easyconnect",
+        "server": "dns-easyconnect"
+      }
+    ]
+  },
+  "endpoints": [
+    {
+      "type": "easyconnect",
+      "tag": "ep-easyconnect",
+      "server": "vpn.example.com",
+      "username": "SangFor with Geedge",
+      "password": "Srun and Venustech",
+      "device": "windows", // 必填
+      "language": "zh_CN",
+      "on_demand": true
+    }
+  ],
+  "outbounds": [
+    {
+      "type": "direct",
+      "tag": "direct-out"
+    },
+    {
+      "type": "selector",
+      "tag": "selector-easyconnect",
+      "outbounds": [
+        "direct",
+        "ep-easyconnect"
+      ]
+    }
+  ],
+  "route": {
+    "rules": [
+      {
+        // 放在 sniff 前可以走 pre-match
+        "preferred_by": "ep-endpoint",
+        "outbound": "selector-easyconnect"
+      }
+    ]
+  }
+}
+```
+
 ## License
 
 ```
