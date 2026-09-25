@@ -29,6 +29,7 @@ const (
 	TypeTUIC               = "tuic"
 	TypeHysteria2          = "hysteria2"
 	TypeOpenConnect        = "openconnect"
+	TypeEasyConnect        = "easyconnect"
 	TypeOpenVPNClient      = "openvpn-client"
 	TypeOpenVPNServer      = "openvpn-server"
 	TypeMASQUEClient       = "masque-client"
@@ -117,6 +118,8 @@ func ProxyDisplayName(proxyType string) string {
 		return "AnyTLS"
 	case TypeOpenConnect:
 		return "OpenConnect"
+	case TypeEasyConnect:
+		return "EasyConnect"
 	case TypeOpenVPNClient:
 		return "OpenVPN Client"
 	case TypeOpenVPNServer:
