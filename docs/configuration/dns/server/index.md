@@ -2,6 +2,10 @@
 icon: material/alert-decagram
 ---
 
+!!! quote "Changes in sing-box 1.15.0"
+
+    :material-plus: [easyconnect](./easyconnect/)
+
 !!! quote "Changes in sing-box 1.14.0"
 
     :material-plus: [mdns](./mdns/)
@@ -47,6 +51,7 @@ The type of the DNS server.
 | `fakeip`        | [Fake IP](./fakeip/)      |
 | `tailscale`     | [Tailscale](./tailscale/) |
 | `openconnect`   | [OpenConnect](./openconnect/) |
+| `easyconnect`   | [EasyConnect](./easyconnect/) |
 | `openvpn`       | [OpenVPN](./openvpn/)         |
 | `resolved`      | [Resolved](./resolved/)   |
 | `group`         | [Group](./group/)         |
