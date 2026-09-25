@@ -121,8 +121,6 @@ endpoint 会配置接口地址和 MTU，但不会安装操作系统路由或 DNS
 
 参阅 [QUIC 字段](/zh/configuration/shared/quic/)。
 
-`initial_packet_size` 默认为 `mtu + 51`，使不超过隧道 MTU 的 IP 数据包能放入一个 QUIC 数据报。QUIC 数据包最大为 1452 字节，`mtu` 更大时，放不下的 IP 数据包会收到 ICMP Packet Too Big 回复。
-
 ## UDP NAT 字段
 
 参阅 [UDP NAT 字段](/zh/configuration/shared/udp-nat/)。
