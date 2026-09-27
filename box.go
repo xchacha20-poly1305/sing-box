@@ -570,6 +570,23 @@ func (s *Box) PreStart() error {
 	return nil
 }
 
+// PostStartOutbounds brings up outbounds and endpoints after PreStart,
+// for callers that only need to dial, such as the tools commands.
+// PreStart leaves them before post-start, where endpoints such as WireGuard actually come up.
+func (s *Box) PostStartOutbounds() error {
+	for _, stage := range []adapter.StartStage{adapter.StartStatePostStart, adapter.StartStateStarted} {
+		err := s.startComponents(stage,
+			boxComponent{"outbound", s.outbound},
+			boxComponent{"endpoint", s.endpoint},
+		)
+		if err != nil {
+			s.Close()
+			return err
+		}
+	}
+	return nil
+}
+
 func (s *Box) Start() error {
 	err := s.start()
 	if err != nil {

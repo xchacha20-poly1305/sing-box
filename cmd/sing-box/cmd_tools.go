@@ -39,6 +39,10 @@ func createPreStartedClient() (*box.Box, error) {
 	if err != nil {
 		return nil, E.Cause(err, "start service")
 	}
+	err = instance.PostStartOutbounds()
+	if err != nil {
+		return nil, E.Cause(err, "start service")
+	}
 	return instance, nil
 }
 
