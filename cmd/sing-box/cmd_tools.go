@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/sagernet/sing-box"
+	"github.com/sagernet/sing-box/adapter"
 	E "github.com/sagernet/sing/common/exceptions"
 	N "github.com/sagernet/sing/common/network"
 	"github.com/sagernet/sing/service"
@@ -38,6 +39,15 @@ func createPreStartedClient() (*box.Box, error) {
 	err = instance.PreStart()
 	if err != nil {
 		return nil, E.Cause(err, "start service")
+	}
+	// PreStart leaves outbounds and endpoints before post-start,
+	// where endpoints such as WireGuard actually come up.
+	for _, stage := range []adapter.StartStage{adapter.StartStatePostStart, adapter.StartStateStarted} {
+		err = adapter.Start(globalCtx, instance.LogFactory().Logger(), stage, instance.Outbound(), instance.Endpoint())
+		if err != nil {
+			_ = instance.Close()
+			return nil, E.Cause(err, "start service")
+		}
 	}
 	return instance, nil
 }
