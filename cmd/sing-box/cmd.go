@@ -52,7 +52,7 @@ func preRun(cmd *cobra.Command, args []string) {
 	if sudoUID > 0 && sudoGID > 0 {
 		globalCtx = filemanager.WithDefault(globalCtx, "", "", sudoUID, sudoGID)
 	}
-	if disableColor {
+	if noColor() {
 		logFactory := log.NewDefaultFactory(context.Background(), log.Formatter{BaseTime: time.Now(), DisableColors: true}, os.Stderr, "", nil, false)
 		common.Must(logFactory.Start())
 		log.SetStdLogger(logFactory.Logger())
@@ -71,4 +71,11 @@ func preRun(cmd *cobra.Command, args []string) {
 		configPaths = append(configPaths, "config.json")
 	}
 	globalCtx = include.Context(service.ContextWith(globalCtx, deprecated.NewStderrManager(log.StdLogger())))
+}
+
+func noColor() bool {
+	if disableColor {
+		return true
+	}
+	return os.Getenv("NO_COLOR") != ""
 }
