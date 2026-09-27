@@ -140,7 +140,7 @@ func (f configCheckerFunc) CheckConfig() error {
 }
 
 func create(options option.Options) (*box.Box, context.CancelFunc, error) {
-	if disableColor {
+	if noColor() {
 		if options.Log == nil {
 			options.Log = &option.LogOptions{}
 		}
