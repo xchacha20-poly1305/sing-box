@@ -70,7 +70,11 @@ IP proxying must be operated over TLS or QUIC. Leave it disabled only when the s
 
 ### path
 
-URI template path of the IP proxying resource, may contain the `target` and `ipproto` variables.
+Path and query of the [RFC 6570](https://www.rfc-editor.org/rfc/rfc6570) URI template of the IP proxying resource.
+
+The template must satisfy the same requirements as the client `path`, see [RFC 9484 Section 3](https://www.rfc-editor.org/rfc/rfc9484#section-3).
+
+Requests are matched against the expansions of the template. The `target` and `ipproto` variables are percent-decoded and validated as described in [RFC 9484 Section 4.6](https://www.rfc-editor.org/rfc/rfc9484#section-4.6); an undefined variable is treated as the wildcard `*`, and an invalid value is rejected with `400 Bad Request`. Other variables are ignored.
 
 `/.well-known/masque/ip/{target}/{ipproto}/` is used by default.
 

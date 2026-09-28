@@ -70,7 +70,11 @@ IP 代理必须运行在 TLS 或 QUIC 之上。仅当服务器位于终止 TLS �
 
 ### path
 
-IP 代理资源的 URI 模板路径，可以包含 `target` 和 `ipproto` 变量。
+IP 代理资源的 [RFC 6570](https://www.rfc-editor.org/rfc/rfc6570) URI 模板的路径与查询部分。
+
+模板需满足与客户端 `path` 相同的要求，参阅 [RFC 9484 第 3 节](https://www.rfc-editor.org/rfc/rfc9484#section-3)。
+
+请求按模板的展开结果进行匹配。`target` 和 `ipproto` 变量经百分号解码后按 [RFC 9484 第 4.6 节](https://www.rfc-editor.org/rfc/rfc9484#section-4.6) 校验；未定义的变量视为通配符 `*`，无效的值以 `400 Bad Request` 拒绝。其他变量会被忽略。
 
 默认使用 `/.well-known/masque/ip/{target}/{ipproto}/`。
 
