@@ -12,6 +12,7 @@
   "username": "sekai",
   "password": "admin",
   "path": "",
+  "udp_path": "",
   "headers": {},
   "version": 0,
   "disable_version_fallback": false,
@@ -47,6 +48,14 @@ Basic 认证密码。
 #### path
 
 HTTP 请求路径。
+
+#### udp_path
+
+CONNECT-UDP（[RFC 9298](https://www.rfc-editor.org/rfc/rfc9298)）资源的 [RFC 6570](https://www.rfc-editor.org/rfc/rfc6570) URI 模板的路径与查询部分。
+
+默认使用 `/.well-known/masque/udp/{target_host}/{target_port}/`。
+
+模板需满足 [RFC 9298 第 2 节](https://www.rfc-editor.org/rfc/rfc9298#section-2) 的要求：包含 `target_host` 和 `target_port` 变量，以 `/` 开头，只包含 `0x21`-`0x7E` 范围内的 ASCII 字符，模板等级不高于 3，且不使用 `+`、`#`、`.`、`/`、`;` 运算符。支持简单字符串展开（`{var}`）、表单式查询展开（`{?var}`）和表单式查询续接（`{&var}`），例如 `/masque{?target_host,target_port}` 或 `/masque?h={target_host}&p={target_port}`。其他变量视为未定义。
 
 #### headers
 

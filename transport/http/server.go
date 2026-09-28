@@ -44,6 +44,7 @@ type ServerOptions struct {
 	HTTP2         bool
 	HTTP2Options  option.HTTP2Options
 	UDP           bool
+	UDPTemplate   *UDPTemplate
 	Tunnels       map[string]TunnelHandler
 }
 
@@ -53,6 +54,7 @@ type Server struct {
 	http1         bool
 	http2Server   *http2.Server
 	udp           bool
+	udpTemplate   *UDPTemplate
 	tunnels       map[string]TunnelHandler
 }
 
@@ -62,7 +64,11 @@ func NewServer(options ServerOptions) *Server {
 		logger:        options.Logger,
 		http1:         options.HTTP1,
 		udp:           options.UDP,
+		udpTemplate:   options.UDPTemplate,
 		tunnels:       options.Tunnels,
+	}
+	if server.udpTemplate == nil {
+		server.udpTemplate = defaultUDPTemplate
 	}
 	if options.HTTP2 {
 		server.http2Server = &http2.Server{

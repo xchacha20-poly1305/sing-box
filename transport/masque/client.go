@@ -48,7 +48,7 @@ type Client struct {
 	cancel          context.CancelFunc
 	logger          logger.ContextLogger
 	httpClient      *transportHTTP.Client
-	template        *Template
+	path            string
 	advertiseRoutes []AddressRange
 	addresses       []netip.Prefix
 	warp            bool
@@ -75,6 +75,10 @@ func NewClient(options ClientOptions) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
+	path, err := template.Expand(Scope{})
+	if err != nil {
+		return nil, E.Cause(err, "expand path")
+	}
 	advertiseRoutes, err := RangesFromPrefixes(options.AdvertiseRoutes, 0)
 	if err != nil {
 		return nil, E.Cause(err, "build advertised routes")
@@ -88,7 +92,7 @@ func NewClient(options ClientOptions) (*Client, error) {
 		cancel:          cancel,
 		logger:          options.Logger,
 		httpClient:      options.HTTPClient,
-		template:        template,
+		path:            path,
 		advertiseRoutes: advertiseRoutes,
 		addresses:       options.Addresses,
 		warp:            options.Warp,
@@ -176,7 +180,7 @@ func (c *Client) connect() (bool, error) {
 		protocol = WarpProtocol
 	}
 	dialCtx, cancelDial := context.WithTimeout(c.ctx, C.TCPTimeout)
-	stream, err := c.httpClient.OpenTunnel(dialCtx, protocol, c.template.Expand())
+	stream, err := c.httpClient.OpenTunnel(dialCtx, protocol, c.path)
 	cancelDial()
 	if err != nil {
 		return false, err

@@ -64,7 +64,11 @@ Basic authorization password.
 
 ### path
 
-URI template path of the IP proxying resource, may contain the `target` and `ipproto` variables.
+Path and query of the [RFC 6570](https://www.rfc-editor.org/rfc/rfc6570) URI template of the IP proxying resource.
+
+The template must satisfy [RFC 9484 Section 3](https://www.rfc-editor.org/rfc/rfc9484#section-3): it must start with `/`, contain only ASCII characters in the range `0x21`-`0x7E`, be a level 3 template or lower, and must not use the `+`, `#`, `.`, `/` or `;` operators. Simple string expansion (`{var}`), form-style query expansion (`{?var}`) and form-style query continuation (`{&var}`) are supported, for example `/masque/ip{?target,ipproto}` or `/masque/ip?t={target}&i={ipproto}`.
+
+The `target` and `ipproto` variables are expanded as the wildcard `*`, which is percent-encoded to `%2A`. Other variables are left undefined.
 
 `/.well-known/masque/ip/{target}/{ipproto}/` is used by default.
 

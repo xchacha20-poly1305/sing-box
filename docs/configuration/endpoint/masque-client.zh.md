@@ -64,7 +64,11 @@ Basic 认证密码。
 
 ### path
 
-IP 代理资源的 URI 模板路径，可以包含 `target` 和 `ipproto` 变量。
+IP 代理资源的 [RFC 6570](https://www.rfc-editor.org/rfc/rfc6570) URI 模板的路径与查询部分。
+
+模板需满足 [RFC 9484 第 3 节](https://www.rfc-editor.org/rfc/rfc9484#section-3) 的要求：以 `/` 开头，只包含 `0x21`-`0x7E` 范围内的 ASCII 字符，模板等级不高于 3，且不使用 `+`、`#`、`.`、`/`、`;` 运算符。支持简单字符串展开（`{var}`）、表单式查询展开（`{?var}`）和表单式查询续接（`{&var}`），例如 `/masque/ip{?target,ipproto}` 或 `/masque/ip?t={target}&i={ipproto}`。
+
+`target` 和 `ipproto` 变量展开为通配符 `*`，经百分号编码后为 `%2A`。其他变量视为未定义。
 
 默认使用 `/.well-known/masque/ip/{target}/{ipproto}/`。
 

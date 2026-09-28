@@ -12,6 +12,7 @@
   "username": "sekai",
   "password": "admin",
   "path": "",
+  "udp_path": "",
   "headers": {},
   "version": 0,
   "disable_version_fallback": false,
@@ -47,6 +48,14 @@ Basic authorization password.
 #### path
 
 Path of HTTP request.
+
+#### udp_path
+
+Path and query of the [RFC 6570](https://www.rfc-editor.org/rfc/rfc6570) URI template of the CONNECT-UDP resource ([RFC 9298](https://www.rfc-editor.org/rfc/rfc9298)).
+
+`/.well-known/masque/udp/{target_host}/{target_port}/` is used by default.
+
+The template must satisfy [RFC 9298 Section 2](https://www.rfc-editor.org/rfc/rfc9298#section-2): it must contain the `target_host` and `target_port` variables, start with `/`, contain only ASCII characters in the range `0x21`-`0x7E`, be a level 3 template or lower, and must not use the `+`, `#`, `.`, `/` or `;` operators. Simple string expansion (`{var}`), form-style query expansion (`{?var}`) and form-style query continuation (`{&var}`) are supported, for example `/masque{?target_host,target_port}` or `/masque?h={target_host}&p={target_port}`. Other variables are left undefined.
 
 #### headers
 
