@@ -52,6 +52,10 @@ func NewInbound(ctx context.Context, router adapter.Router, logger log.ContextLo
 	if !serveHTTP1 && !serveHTTP2 && options.SetSystemProxy {
 		return nil, E.New("set_system_proxy requires HTTP/1 or HTTP/2")
 	}
+	udpTemplate, err := http.ParseUDPTemplate(options.UDPPath)
+	if err != nil {
+		return nil, E.Cause(err, "parse udp_path")
+	}
 	inbound := &Inbound{
 		Adapter: inbound.NewAdapter(C.TypeHTTP, tag),
 		ctx:     ctx,
@@ -64,6 +68,7 @@ func NewInbound(ctx context.Context, router adapter.Router, logger log.ContextLo
 			HTTP2:         serveHTTP2,
 			HTTP2Options:  options.HTTP2Options,
 			UDP:           true,
+			UDPTemplate:   udpTemplate,
 		}),
 		http3:       serveHTTP3,
 		quicOptions: options.HTTP3Options,

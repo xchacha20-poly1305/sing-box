@@ -39,6 +39,7 @@ func NewOutbound(ctx context.Context, router adapter.Router, logger log.ContextL
 		Username:               options.Username,
 		Password:               options.Password,
 		Path:                   options.Path,
+		UDPPath:                options.UDPPath,
 		Headers:                headers,
 		Version:                http.ResolveVersion(options.Version, options.Path, headers.Get("Host")),
 		DisableVersionFallback: options.DisableVersionFallback,

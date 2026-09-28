@@ -7566,6 +7566,9 @@
             "set_system_proxy": {
               "type": "boolean"
             },
+            "udp_path": {
+              "type": "string"
+            },
             "version": {
               "anyOf": [
                 {
@@ -8280,6 +8283,9 @@
             },
             "set_system_proxy": {
               "type": "boolean"
+            },
+            "udp_path": {
+              "type": "string"
             },
             "tls": {
               "$ref": "#/$defs/InboundTLSOptions"
@@ -11057,6 +11063,9 @@
         },
         "timestamp": {
           "type": "boolean"
+        },
+        "disable_color": {
+          "type": "boolean"
         }
       },
       "additionalProperties": false
@@ -13821,6 +13830,9 @@
               "$ref": "#/$defs/OutboundTLSOptions"
             },
             "path": {
+              "type": "string"
+            },
+            "udp_path": {
               "type": "string"
             },
             "headers": {

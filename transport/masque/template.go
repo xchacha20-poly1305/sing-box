@@ -3,7 +3,6 @@ package masque
 import (
 	"net/netip"
 	"net/url"
-	"regexp"
 	"strconv"
 	"strings"
 
@@ -23,15 +22,7 @@ const (
 // resource (RFC 9484 Section 3).
 type Template struct {
 	template *uritemplate.Template
-	pattern  *regexp.Regexp
-	groups   []matchGroup
-}
-
-type matchGroup struct {
-	name     string
-	operator uritemplate.Operator
-	// first is set for the first varspec of a form-style expression.
-	first bool
+	matcher  *uritemplate.Matcher
 }
 
 type Scope struct {
@@ -44,78 +35,15 @@ func ParseTemplate(path string) (*Template, error) {
 	if path == "" {
 		path = DefaultPath
 	}
-	for _, character := range []byte(path) {
-		if character < 0x21 || character > 0x7E {
-			return nil, E.New("path contains invalid characters: ", path)
-		}
-	}
-	if !strings.HasPrefix(path, "/") {
-		return nil, E.New("path must start with a slash: ", path)
-	}
-	template, err := uritemplate.Parse(path)
+	template, err := uritemplate.ParseProxyPath(path)
 	if err != nil {
-		return nil, E.Cause(err, "parse URI template: ", path)
+		return nil, err
 	}
-	if template.Level() > 3 {
-		return nil, E.New("URI template must be level 3 or lower: ", path)
-	}
-	for _, part := range template.Parts() {
-		if part.Expression == nil {
-			if strings.Contains(part.Literal, "#") {
-				return nil, E.New("path must not contain a fragment: ", path)
-			}
-			continue
-		}
-		switch part.Expression.Operator {
-		case uritemplate.OperatorSimple, uritemplate.OperatorQuery, uritemplate.OperatorContinue:
-		default:
-			return nil, E.New("unsupported expression operator in path: ", path)
-		}
-	}
-	t := &Template{template: template}
-	err = t.compile()
+	matcher, err := uritemplate.NewMatcher(template)
 	if err != nil {
 		return nil, E.Cause(err, "compile path: ", path)
 	}
-	return t, nil
-}
-
-// Characters that may appear in an expanded value: pchar without the
-// separators of simple and form-style expansions. Stricter than pchar so
-// that expressions do not overlap; looser than the unreserved set so that
-// clients sending "*" unencoded, as in the examples of RFC 9484, are
-// accepted.
-const valuePattern = `[A-Za-z0-9\-._~%!$'()*+;:@]*`
-
-// compile builds a pattern matching the expansions of the template. Only
-// string values are considered since RFC 9484 templates are level 3 or
-// lower.
-func (t *Template) compile() error {
-	var pattern strings.Builder
-	pattern.WriteString("^")
-	for _, part := range t.template.Parts() {
-		if part.Expression == nil {
-			pattern.WriteString(regexp.QuoteMeta(part.Literal))
-			continue
-		}
-		operator := part.Expression.Operator
-		for i, varSpec := range part.Expression.VarSpecs {
-			group := matchGroup{name: varSpec.Name, operator: operator, first: i == 0}
-			t.groups = append(t.groups, group)
-			switch {
-			case operator == uritemplate.OperatorSimple && i == 0:
-				pattern.WriteString("(" + valuePattern + ")")
-			case operator == uritemplate.OperatorSimple:
-				pattern.WriteString("(?:,(" + valuePattern + "))?")
-			default:
-				pattern.WriteString("(?:[?&]" + regexp.QuoteMeta(varSpec.Name) + "=(" + valuePattern + "))?")
-			}
-		}
-	}
-	pattern.WriteString("$")
-	var err error
-	t.pattern, err = regexp.Compile(pattern.String())
-	return err
+	return &Template{template: template, matcher: matcher}, nil
 }
 
 // Expand performs URI Template expansion for the request scope (RFC 9484
@@ -147,54 +75,19 @@ func (t *Template) Expand(scope Scope) (string, error) {
 // Section 4.1). The boolean result reports whether the URI is an expansion of
 // the template; the error reports a malformed request.
 func (t *Template) Match(requestURL *url.URL) (Scope, bool, error) {
-	requestURI := requestURL.EscapedPath()
-	if requestURL.RawQuery != "" || requestURL.ForceQuery {
-		requestURI += "?" + requestURL.RawQuery
-	}
-	match := t.pattern.FindStringSubmatchIndex(requestURI)
-	if match == nil {
-		return Scope{}, false, nil
-	}
-	values := make(map[string]string)
-	var formStarted bool
-	for i, group := range t.groups {
-		start, end := match[2*i+2], match[2*i+3]
-		if group.first {
-			formStarted = false
-		}
-		if start == -1 {
-			continue
-		}
-		if group.operator == uritemplate.OperatorQuery || group.operator == uritemplate.OperatorContinue {
-			// The first defined variable of a form-style expression is
-			// prefixed by the operator, subsequent ones by "&".
-			expected := byte('&')
-			if !formStarted {
-				expected = byte(group.operator)
-			}
-			if requestURI[start-len(group.name)-2] != expected {
-				return Scope{}, false, nil
-			}
-			formStarted = true
-		}
-		value, err := url.PathUnescape(requestURI[start:end])
-		if err != nil {
-			return Scope{}, true, E.Cause(err, "decode ", group.name)
-		}
-		if previous, loaded := values[group.name]; loaded && previous != value {
-			return Scope{}, true, E.New("conflicting values for ", group.name)
-		}
-		values[group.name] = value
+	values, matched, err := t.matcher.MatchURL(requestURL)
+	if !matched || err != nil {
+		return Scope{}, matched, err
 	}
 	var scope Scope
 	if target, loaded := values[variableTarget]; loaded {
-		err := scope.parseTarget(target)
+		err = scope.parseTarget(target)
 		if err != nil {
 			return Scope{}, true, err
 		}
 	}
 	if protocol, loaded := values[variableIPProto]; loaded {
-		err := scope.parseProtocol(protocol)
+		err = scope.parseProtocol(protocol)
 		if err != nil {
 			return Scope{}, true, err
 		}
@@ -236,10 +129,8 @@ func (s *Scope) parseTarget(target string) error {
 	}
 	// A host that does not match IPv4address is a reg-name (RFC 3986
 	// Section 3.2.2).
-	for _, character := range []byte(target) {
-		if !isRegName(character) {
-			return E.New("invalid target: ", target)
-		}
+	if !uritemplate.IsRegName(target) {
+		return E.New("invalid target: ", target)
 	}
 	s.Domain = target
 	return nil
@@ -268,19 +159,6 @@ func parsePrefix(address string, prefixLength string, hasPrefixLength bool, maxD
 		return netip.Prefix{}, E.New("prefix has host bits set")
 	}
 	return prefix, nil
-}
-
-// reg-name = *( unreserved / pct-encoded / sub-delims ), checked after
-// percent-decoding so octets from pct-encoded triplets are accepted when they
-// are not ASCII.
-func isRegName(character byte) bool {
-	switch {
-	case character >= 0x80:
-		return true
-	case character >= 'A' && character <= 'Z', character >= 'a' && character <= 'z', character >= '0' && character <= '9':
-		return true
-	}
-	return strings.IndexByte("-._~!$&'()*+,;=", character) != -1
 }
 
 // parseProtocol validates the decoded ipproto variable (RFC 9484 Section
