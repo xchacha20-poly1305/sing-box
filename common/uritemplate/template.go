@@ -207,13 +207,15 @@ func isVarName(name string) bool {
 	return !previousDot
 }
 
-// literals = %x21 / %x23-24 / %x26 / %x28-3B / %x3D / %x3F-5B
+// literals = %x21 / %x23-24 / %x26-3B / %x3D / %x3F-5B
 //
 //	/  %x5D / %x5F / %x61-7A / %x7E / ucschar / iprivate
 //	/  pct-encoded
+//
+// As corrected by RFC 6570 Errata ID 6937, which allows "'".
 func isLiteral(r rune) bool {
 	switch {
-	case r == 0x21, r >= 0x23 && r <= 0x24, r == 0x26, r >= 0x28 && r <= 0x3B, r == 0x3D,
+	case r == 0x21, r >= 0x23 && r <= 0x24, r >= 0x26 && r <= 0x3B, r == 0x3D,
 		r >= 0x3F && r <= 0x5B, r == 0x5D, r == 0x5F, r >= 0x61 && r <= 0x7A, r == 0x7E:
 		return true
 	}
