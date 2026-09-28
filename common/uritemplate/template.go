@@ -318,3 +318,7 @@ func isHex(character byte) bool {
 func isPercentEncoded(value string) bool {
 	return len(value) >= 3 && value[0] == '%' && isHex(value[1]) && isHex(value[2])
 }
+
+func isGraph(b byte) bool {
+	return '!' <= b && b <= '~'
+}

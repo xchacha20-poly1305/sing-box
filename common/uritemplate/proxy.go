@@ -10,8 +10,8 @@ import (
 // proxying resource (RFC 9298 Section 2) or an IP proxying resource (RFC 9484
 // Section 3), and validates the requirements the two share.
 func ParseProxyPath(path string) (*Template, error) {
-	for _, character := range []byte(path) {
-		if character < 0x21 || character > 0x7E {
+	for i := range len(path) {
+		if !isGraph(path[i]) {
 			return nil, E.New("path contains invalid characters: ", path)
 		}
 	}
@@ -48,7 +48,7 @@ func ParseProxyPath(path string) (*Template, error) {
 //
 // Octets from pct-encoded triplets are accepted when they are not ASCII.
 func IsRegName(host string) bool {
-	for i := 0; i < len(host); i++ {
+	for i := range len(host) {
 		character := host[i]
 		if character >= 0x80 || isUnreserved(character) || strings.IndexByte("!$&'()*+,;=", character) != -1 {
 			continue
