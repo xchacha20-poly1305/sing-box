@@ -3,26 +3,26 @@ package masque
 import (
 	"net/netip"
 	"net/url"
-	"regexp"
 	"strconv"
 	"strings"
 
+	"github.com/sagernet/sing-box/common/uritemplate"
 	E "github.com/sagernet/sing/common/exceptions"
 )
 
 const DefaultPath = "/.well-known/masque/ip/{target}/{ipproto}/"
 
-type expression struct {
-	operator  byte
-	variables []string
-}
+const (
+	variableTarget  = "target"
+	variableIPProto = "ipproto"
+	wildcard        = "*"
+)
 
+// Template is the path and query of the URI Template of an IP proxying
+// resource (RFC 9484 Section 3).
 type Template struct {
-	literals       []string
-	expressions    []expression
-	pathExpression *regexp.Regexp
-	pathVariables  []string
-	queryVariables map[string]string
+	template *uritemplate.Template
+	matcher  *uritemplate.Matcher
 }
 
 type Scope struct {
@@ -35,203 +35,150 @@ func ParseTemplate(path string) (*Template, error) {
 	if path == "" {
 		path = DefaultPath
 	}
-	if !strings.HasPrefix(path, "/") {
-		return nil, E.New("path must start with a slash: ", path)
+	template, err := uritemplate.ParseProxyPath(path)
+	if err != nil {
+		return nil, err
 	}
-	for _, character := range []byte(path) {
-		if character < 0x21 || character > 0x7E {
-			return nil, E.New("path contains invalid characters: ", path)
-		}
-	}
-	template := &Template{queryVariables: make(map[string]string)}
-	var pathPattern strings.Builder
-	pathPattern.WriteString("^")
-	inQuery := false
-	remaining := path
-	for {
-		open := strings.IndexByte(remaining, '{')
-		if open == -1 {
-			break
-		}
-		closing := strings.IndexByte(remaining[open:], '}')
-		if closing == -1 {
-			return nil, E.New("unterminated expression in path: ", path)
-		}
-		literal := remaining[:open]
-		body := remaining[open+1 : open+closing]
-		remaining = remaining[open+closing+1:]
-		if body == "" {
-			return nil, E.New("empty expression in path: ", path)
-		}
-		var item expression
-		switch body[0] {
-		case '?', '&':
-			item.operator = body[0]
-			body = body[1:]
-		case '+', '#', '.', '/', ';':
-			return nil, E.New("unsupported expression operator in path: ", path)
-		}
-		item.variables = strings.Split(body, ",")
-		for _, variable := range item.variables {
-			if variable == "" || strings.ContainsAny(variable, ":*") {
-				return nil, E.New("unsupported expression in path: ", path)
-			}
-		}
-		if !inQuery {
-			literalPath, _, hasQuery := strings.Cut(literal, "?")
-			if hasQuery {
-				inQuery = true
-				pathPattern.WriteString(regexp.QuoteMeta(literalPath))
-			} else if item.operator != 0 {
-				inQuery = true
-				pathPattern.WriteString(regexp.QuoteMeta(literal))
-			} else {
-				if len(item.variables) != 1 {
-					return nil, E.New("unsupported expression in path: ", path)
-				}
-				pathPattern.WriteString(regexp.QuoteMeta(literal))
-				pathPattern.WriteString("([^/]*)")
-				template.pathVariables = append(template.pathVariables, item.variables[0])
-			}
-		}
-		if inQuery && item.operator == 0 {
-			queryKey := literal[strings.LastIndexAny(literal, "?&")+1:]
-			if len(item.variables) != 1 || len(queryKey) < 2 || !strings.HasSuffix(queryKey, "=") {
-				return nil, E.New("unsupported expression in path: ", path)
-			}
-			template.queryVariables[strings.TrimSuffix(queryKey, "=")] = item.variables[0]
-		}
-		template.literals = append(template.literals, literal)
-		template.expressions = append(template.expressions, item)
-	}
-	if !inQuery {
-		remainingPath, _, _ := strings.Cut(remaining, "?")
-		pathPattern.WriteString(regexp.QuoteMeta(remainingPath))
-	}
-	pathPattern.WriteString("$")
-	template.literals = append(template.literals, remaining)
-	pathExpression, err := regexp.Compile(pathPattern.String())
+	matcher, err := uritemplate.NewMatcher(template)
 	if err != nil {
 		return nil, E.Cause(err, "compile path: ", path)
 	}
-	template.pathExpression = pathExpression
-	return template, nil
+	return &Template{template: template, matcher: matcher}, nil
 }
 
-func (t *Template) Expand() string {
-	var result strings.Builder
-	for i, item := range t.expressions {
-		result.WriteString(t.literals[i])
-		separator := item.operator
-		for _, variable := range item.variables {
-			if variable != "target" && variable != "ipproto" {
-				continue
-			}
-			if separator != 0 {
-				result.WriteByte(separator)
-				result.WriteString(variable)
-				result.WriteByte('=')
-				separator = '&'
-			}
-			result.WriteByte('*')
+// Expand performs URI Template expansion for the request scope (RFC 9484
+// Section 4). Unset scope fields are expanded as the wildcard "*"; other
+// variables are left undefined.
+func (t *Template) Expand(scope Scope) (string, error) {
+	target := wildcard
+	switch {
+	case scope.Domain != "":
+		target = scope.Domain
+	case scope.Prefix.IsValid():
+		if scope.Prefix.IsSingleIP() {
+			target = scope.Prefix.Addr().String()
+		} else {
+			target = scope.Prefix.String()
 		}
 	}
-	result.WriteString(t.literals[len(t.literals)-1])
-	return result.String()
+	protocol := wildcard
+	if scope.Protocol != 0 {
+		protocol = strconv.Itoa(int(scope.Protocol))
+	}
+	return t.template.Expand(uritemplate.Values{
+		variableTarget:  uritemplate.String(target),
+		variableIPProto: uritemplate.String(protocol),
+	})
 }
 
+// Match extracts the scope from the URI of an IP proxying request (RFC 9484
+// Section 4.1). The boolean result reports whether the URI is an expansion of
+// the template; the error reports a malformed request.
 func (t *Template) Match(requestURL *url.URL) (Scope, bool, error) {
-	match := t.pathExpression.FindStringSubmatch(requestURL.EscapedPath())
-	if match == nil {
-		return Scope{}, false, nil
-	}
-	target := "*"
-	protocol := "*"
-	query := requestURL.Query()
-	for _, item := range t.expressions {
-		if item.operator == 0 {
-			continue
-		}
-		for _, variable := range item.variables {
-			if !query.Has(variable) {
-				continue
-			}
-			switch variable {
-			case "target":
-				target = query.Get(variable)
-			case "ipproto":
-				protocol = query.Get(variable)
-			}
-		}
-	}
-	for queryKey, variable := range t.queryVariables {
-		if !query.Has(queryKey) {
-			continue
-		}
-		switch variable {
-		case "target":
-			target = query.Get(queryKey)
-		case "ipproto":
-			protocol = query.Get(queryKey)
-		}
-	}
-	for i, variable := range t.pathVariables {
-		value, err := url.PathUnescape(match[i+1])
-		if err != nil {
-			return Scope{}, true, E.Cause(err, "decode ", variable)
-		}
-		switch variable {
-		case "target":
-			target = value
-		case "ipproto":
-			protocol = value
-		}
+	values, matched, err := t.matcher.MatchURL(requestURL)
+	if !matched || err != nil {
+		return Scope{}, matched, err
 	}
 	var scope Scope
-	switch target {
-	case "":
-		return Scope{}, true, E.New("empty target")
-	case "*":
-	default:
-		prefix, err := parseTarget(target)
-		if err == nil {
-			scope.Prefix = prefix
-		} else if strings.ContainsAny(target, ":/") {
-			return Scope{}, true, E.Cause(err, "parse target")
-		} else {
-			scope.Domain = target
+	if target, loaded := values[variableTarget]; loaded {
+		err = scope.parseTarget(target)
+		if err != nil {
+			return Scope{}, true, err
 		}
 	}
-	if protocol != "*" {
-		protocolNumber, err := strconv.ParseUint(protocol, 10, 8)
+	if protocol, loaded := values[variableIPProto]; loaded {
+		err = scope.parseProtocol(protocol)
 		if err != nil {
-			return Scope{}, true, E.New("invalid ipproto: ", protocol)
+			return Scope{}, true, err
 		}
-		scope.Protocol = uint8(protocolNumber)
 	}
 	return scope, true, nil
 }
 
-func parseTarget(target string) (netip.Prefix, error) {
-	var prefix netip.Prefix
-	if strings.Contains(target, "/") {
-		var err error
-		prefix, err = netip.ParsePrefix(target)
-		if err != nil {
-			return netip.Prefix{}, err
-		}
-	} else {
-		address, err := netip.ParseAddr(target)
-		if err != nil {
-			return netip.Prefix{}, err
-		}
-		prefix = netip.PrefixFrom(address, address.BitLen())
+// parseTarget validates the decoded target variable (RFC 9484 Section 4.6):
+//
+//	target = IPv6prefix / IPv4prefix / reg-name / "*"
+//	IPv6prefix = IPv6address ["%2F" 1*3DIGIT]
+//	IPv4prefix = IPv4address ["%2F" 1*2DIGIT]
+func (s *Scope) parseTarget(target string) error {
+	switch target {
+	case "":
+		return E.New("empty target")
+	case wildcard:
+		return nil
 	}
-	if prefix.Addr().Zone() != "" {
-		return netip.Prefix{}, E.New("zone identifiers are not supported: ", target)
+	address, prefixLength, hasPrefixLength := strings.Cut(target, "/")
+	if strings.Contains(address, ":") {
+		prefix, err := parsePrefix(address, prefixLength, hasPrefixLength, 3)
+		if err != nil {
+			return E.Cause(err, "invalid target: ", target)
+		}
+		if !prefix.Addr().Is6() {
+			return E.New("invalid target: ", target)
+		}
+		s.Prefix = prefix
+		return nil
 	}
+	prefix, err := parsePrefix(address, prefixLength, hasPrefixLength, 2)
+	if err == nil && prefix.Addr().Is4() {
+		s.Prefix = prefix
+		return nil
+	}
+	if hasPrefixLength {
+		return E.Cause(err, "invalid target: ", target)
+	}
+	// A host that does not match IPv4address is a reg-name (RFC 3986
+	// Section 3.2.2).
+	if !uritemplate.IsRegName(target) {
+		return E.New("invalid target: ", target)
+	}
+	s.Domain = target
+	return nil
+}
+
+func parsePrefix(address string, prefixLength string, hasPrefixLength bool, maxDigits int) (netip.Prefix, error) {
+	addr, err := netip.ParseAddr(address)
+	if err != nil {
+		return netip.Prefix{}, err
+	}
+	if addr.Zone() != "" {
+		return netip.Prefix{}, E.New("zone identifiers are not supported")
+	}
+	bits := addr.BitLen()
+	if hasPrefixLength {
+		if prefixLength == "" || len(prefixLength) > maxDigits || strings.Trim(prefixLength, "0123456789") != "" {
+			return netip.Prefix{}, E.New("invalid prefix length")
+		}
+		bits, _ = strconv.Atoi(prefixLength)
+		if bits > addr.BitLen() {
+			return netip.Prefix{}, E.New("prefix length out of range")
+		}
+	}
+	prefix := netip.PrefixFrom(addr, bits)
 	if prefix.Masked() != prefix {
-		return netip.Prefix{}, E.New("prefix has host bits set: ", target)
+		return netip.Prefix{}, E.New("prefix has host bits set")
 	}
 	return prefix, nil
+}
+
+// parseProtocol validates the decoded ipproto variable (RFC 9484 Section
+// 4.6):
+//
+//	ipproto = 1*3DIGIT / "*"
+func (s *Scope) parseProtocol(protocol string) error {
+	switch protocol {
+	case "":
+		return E.New("empty ipproto")
+	case wildcard:
+		return nil
+	}
+	if len(protocol) > 3 || strings.Trim(protocol, "0123456789") != "" {
+		return E.New("invalid ipproto: ", protocol)
+	}
+	protocolNumber, _ := strconv.Atoi(protocol)
+	if protocolNumber > 255 {
+		return E.New("invalid ipproto: ", protocol)
+	}
+	s.Protocol = uint8(protocolNumber)
+	return nil
 }

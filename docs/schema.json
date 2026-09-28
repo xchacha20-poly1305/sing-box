@@ -7647,6 +7647,9 @@
             "set_system_proxy": {
               "type": "boolean"
             },
+            "udp_path": {
+              "type": "string"
+            },
             "version": {
               "anyOf": [
                 {
@@ -8391,6 +8394,9 @@
             },
             "set_system_proxy": {
               "type": "boolean"
+            },
+            "udp_path": {
+              "type": "string"
             },
             "tls": {
               "$ref": "#/$defs/InboundTLSOptions"
@@ -13841,6 +13847,9 @@
               "$ref": "#/$defs/OutboundTLSOptions"
             },
             "path": {
+              "type": "string"
+            },
+            "udp_path": {
               "type": "string"
             },
             "headers": {

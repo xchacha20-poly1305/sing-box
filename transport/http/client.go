@@ -46,6 +46,7 @@ type ClientOptions struct {
 	Username               string
 	Password               string
 	Path                   string
+	UDPPath                string
 	Headers                http.Header
 	Version                int
 	DisableVersionFallback bool
@@ -74,6 +75,7 @@ type Client struct {
 	authorization                   string
 	host                            string
 	path                            string
+	udpTemplate                     *UDPTemplate
 	headers                         http.Header
 	version                         int
 	disableVersionFallback          bool
@@ -141,6 +143,11 @@ func NewClient(options ClientOptions) (*Client, error) {
 		udpFastOpen:            options.UDPFastOpen,
 		warp:                   options.Warp,
 	}
+	udpTemplate, err := ParseUDPTemplate(options.UDPPath)
+	if err != nil {
+		return nil, E.Cause(err, "parse UDP path")
+	}
+	client.udpTemplate = udpTemplate
 	if client.headers != nil {
 		client.host = client.headers.Get("Host")
 		client.headers.Del("Host")
@@ -396,9 +403,13 @@ func (c *Client) ListenPacket(ctx context.Context, destination M.Socksaddr) (net
 }
 
 func (c *Client) listenPacket(ctx context.Context, destination M.Socksaddr) (N.PacketConn, error) {
+	requestURL, err := c.udpTemplate.Expand(destination)
+	if err != nil {
+		return nil, E.Cause(err, "expand UDP path")
+	}
 	conn, stream, err := c.openTunnel(ctx, tunnelRequest{
 		protocol:    connectUDPProtocol,
-		url:         connectUDPURL(destination),
+		url:         requestURL,
 		destination: destination,
 		fastOpen:    c.udpFastOpen,
 	})
