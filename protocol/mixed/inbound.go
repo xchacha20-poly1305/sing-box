@@ -49,6 +49,10 @@ func NewInbound(ctx context.Context, router adapter.Router, logger log.ContextLo
 	} else {
 		udpTimeout = C.UDPTimeout
 	}
+	udpTemplate, err := http.ParseUDPTemplate(options.UDPPath)
+	if err != nil {
+		return nil, E.Cause(err, "parse udp_path")
+	}
 	inbound := &Inbound{
 		Adapter:       inbound.NewAdapter(C.TypeMixed, tag),
 		router:        uot.NewRouter(speedtest.NewRouter(router, logger, speedtest.ParseHandleOption(options.SpeedTest)), logger),
@@ -62,6 +66,7 @@ func NewInbound(ctx context.Context, router adapter.Router, logger log.ContextLo
 		HTTP1:         true,
 		HTTP2:         true,
 		UDP:           true,
+		UDPTemplate:   udpTemplate,
 	})
 	if options.TLS != nil {
 		tlsConfig, err := tls.NewServerWithOptions(tls.ServerOptions{

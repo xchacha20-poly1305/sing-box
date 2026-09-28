@@ -24,6 +24,7 @@ type HTTPMixedInboundOptions struct {
 	Users          []auth.User           `json:"users,omitempty"`
 	DomainResolver *DomainResolveOptions `json:"domain_resolver,omitempty"`
 	SetSystemProxy bool                  `json:"set_system_proxy,omitempty"`
+	UDPPath        string                `json:"udp_path,omitempty"`
 	InboundTLSOptionsContainer
 
 	SpeedTest string `json:"speed_test,omitempty"`
@@ -35,6 +36,7 @@ type _HTTPInboundOptions struct {
 	Users          []auth.User             `json:"users,omitempty"`
 	DomainResolver *DomainResolveOptions   `json:"domain_resolver,omitempty"`
 	SetSystemProxy bool                    `json:"set_system_proxy,omitempty"`
+	UDPPath        string                  `json:"udp_path,omitempty"`
 	Version        badoption.Listable[int] `json:"version,omitempty" enum:"1,2,3"`
 	InboundTLSOptionsContainer
 	HTTP2Options HTTP2Options `json:"-"`
@@ -107,6 +109,7 @@ type _HTTPOutboundOptions struct {
 	Password string `json:"password,omitempty"`
 	OutboundTLSOptionsContainer
 	Path                   string               `json:"path,omitempty"`
+	UDPPath                string               `json:"udp_path,omitempty"`
 	Headers                badoption.HTTPHeader `json:"headers,omitempty"`
 	Version                int                  `json:"version,omitempty" enum:"0,1,2,3"`
 	DisableVersionFallback bool                 `json:"disable_version_fallback,omitempty"`
