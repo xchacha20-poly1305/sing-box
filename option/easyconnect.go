@@ -11,6 +11,7 @@ type EasyConnectEndpointOptions struct {
 	UDPMapping                        UDPNATBehavior        `json:"udp_mapping,omitempty"`
 	UDPFiltering                      UDPNATBehavior        `json:"udp_filtering,omitempty"`
 	UDPNATMax                         uint32                `json:"udp_nat_max,omitempty"`
+	TCPCongestionControl              string                `json:"tcp_congestion_control,omitempty" enum:"reno,cubic,bbr"`
 	Server                            string                `json:"server"`
 	Username                          string                `json:"username,omitempty"`
 	Password                          string                `json:"password,omitempty"`
