@@ -4,13 +4,16 @@ import "github.com/sagernet/sing/common/json/badoption"
 
 type EasyConnectEndpointOptions struct {
 	DialerOptions
-	System                            bool                  `json:"system,omitempty"`
-	GSO                               *bool                 `json:"gso,omitempty"`
-	Name                              string                `json:"name,omitempty"`
-	UDPTimeout                        badoption.Duration    `json:"udp_timeout,omitempty"`
-	UDPMapping                        UDPNATBehavior        `json:"udp_mapping,omitempty"`
-	UDPFiltering                      UDPNATBehavior        `json:"udp_filtering,omitempty"`
-	UDPNATMax                         uint32                `json:"udp_nat_max,omitempty"`
+	System       bool               `json:"system,omitempty"`
+	GSO          *bool              `json:"gso,omitempty"`
+	Name         string             `json:"name,omitempty"`
+	UDPTimeout   badoption.Duration `json:"udp_timeout,omitempty"`
+	UDPMapping   UDPNATBehavior     `json:"udp_mapping,omitempty"`
+	UDPFiltering UDPNATBehavior     `json:"udp_filtering,omitempty"`
+	UDPNATMax    uint32             `json:"udp_nat_max,omitempty"`
+
+	TCPCongestionControl TCPCongestionControl `json:"tcp_congestion_control,omitempty" enum:"reno,cubic,bbr"`
+
 	Server                            string                `json:"server"`
 	Username                          string                `json:"username,omitempty"`
 	Password                          string                `json:"password,omitempty"`

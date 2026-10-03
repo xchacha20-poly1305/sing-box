@@ -4159,6 +4159,14 @@
               "minimum": 0,
               "maximum": 4294967295
             },
+            "tcp_congestion_control": {
+              "type": "string",
+              "enum": [
+                "reno",
+                "cubic",
+                "bbr"
+              ]
+            },
             "server": {
               "type": "string"
             },

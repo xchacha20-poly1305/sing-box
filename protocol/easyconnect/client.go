@@ -75,6 +75,9 @@ type clientState struct {
 }
 
 func NewEndpoint(ctx context.Context, router adapter.Router, logger log.ContextLogger, tag string, options option.EasyConnectEndpointOptions) (adapter.Endpoint, error) {
+	if err := options.TCPCongestionControl.Validate(); err != nil {
+		return nil, err
+	}
 	loopContext, cancelLoop := context.WithCancel(ctx)
 	easyConnectEndpoint := &Endpoint{
 		endpointBase: endpointBase{
@@ -128,21 +131,22 @@ func NewEndpoint(ctx context.Context, router adapter.Router, logger log.ContextL
 	}
 	networkManager := service.FromContext[adapter.NetworkManager](ctx)
 	easyConnectEndpoint.deviceOptions = &device.Options{
-		Context:             ctx,
-		Logger:              logger,
-		System:              options.System,
-		GSO:                 gso,
-		Handler:             easyConnectEndpoint,
-		UDPTimeout:          udpTimeout,
-		ICMPTimeout:         C.ICMPTimeout,
-		UDPMapping:          tun.NATMapping(options.UDPMapping),
-		UDPFiltering:        tun.NATFiltering(options.UDPFiltering),
-		UDPNATMax:           options.UDPNATMax,
-		InterfaceFinder:     networkManager.InterfaceFinder(),
-		Name:                options.Name,
-		NamePrefix:          "ec",
-		MTU:                 easyconnecttransport.DefaultMTU,
-		PacketFrontHeadroom: easyconnect.PacketHeadroom,
+		Context:              ctx,
+		Logger:               logger,
+		System:               options.System,
+		GSO:                  gso,
+		Handler:              easyConnectEndpoint,
+		UDPTimeout:           udpTimeout,
+		ICMPTimeout:          C.ICMPTimeout,
+		UDPMapping:           tun.NATMapping(options.UDPMapping),
+		UDPFiltering:         tun.NATFiltering(options.UDPFiltering),
+		UDPNATMax:            options.UDPNATMax,
+		TCPCongestionControl: string(options.TCPCongestionControl),
+		InterfaceFinder:      networkManager.InterfaceFinder(),
+		Name:                 options.Name,
+		NamePrefix:           "ec",
+		MTU:                  easyconnecttransport.DefaultMTU,
+		PacketFrontHeadroom:  easyconnect.PacketHeadroom,
 		Configuration: device.Configuration{
 			MTU: easyconnecttransport.DefaultMTU,
 		},
