@@ -21,4 +21,5 @@
 /venv/
 CLAUDE.md
 AGENTS.md
-/.claude/
+/.claude/*
+!/.claude/skills/
