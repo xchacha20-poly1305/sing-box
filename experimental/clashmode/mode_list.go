@@ -1,7 +1,8 @@
 package clashmode
 
 import (
-	"sort"
+	"slices"
+	"strings"
 
 	C "github.com/sagernet/sing-box/constant"
 	"github.com/sagernet/sing-box/option"
@@ -14,17 +15,21 @@ func CalculateModeList(options option.Options) []string {
 	clashModes = append(clashModes, extraClashModeFromDNSRule(common.PtrValueOrDefault(options.DNS).Rules)...)
 	clashModes = common.FilterNotDefault(common.Uniq(clashModes))
 	predefinedOrder := []string{
-		"Rule", "Global", "Direct",
+		"rule", "global", "direct",
 	}
 	var newClashModes []string
 	for _, mode := range clashModes {
-		if !common.Contains(predefinedOrder, mode) {
+		if !slices.ContainsFunc(predefinedOrder, func(it string) bool {
+			return strings.EqualFold(it, mode)
+		}) {
 			newClashModes = append(newClashModes, mode)
 		}
 	}
-	sort.Strings(newClashModes)
+	slices.Sort(newClashModes)
 	for _, mode := range predefinedOrder {
-		if common.Contains(clashModes, mode) {
+		if slices.ContainsFunc(clashModes, func(it string) bool {
+			return strings.EqualFold(it, mode)
+		}) {
 			newClashModes = append(newClashModes, mode)
 		}
 	}
