@@ -23,3 +23,7 @@ CLAUDE.md
 AGENTS.md
 /.claude/*
 !/.claude/skills/
+
+# My build
+/mybuild.sh
+/sing-box*
