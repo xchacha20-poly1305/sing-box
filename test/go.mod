@@ -12,6 +12,7 @@ replace (
 	github.com/sagernet/sing-quic => github.com/reF1nd/sing-quic v0.7.2-0.20261127162851-680b92488c5d
 	github.com/sagernet/sing-snell => github.com/reF1nd/sing-snell v0.0.0-20261126085318-32cdba1b822c
 	github.com/sagernet/sing-tun => github.com/reF1nd/sing-tun v0.9.7-0.20261126054119-6ba2b41fb95d
+	github.com/sagernet/sing-vmess => github.com/xchacha20-poly1305/sing-vmess v0.2.9-0.20261125043036-1952e350d5f0
 	github.com/sagernet/tailscale => github.com/reF1nd/tailscale v1.106.1-sing-box-1.15-mod.1.0.20261126083945-24a740396f88
 	github.com/sagernet/wireguard-go => github.com/reF1nd/wireguard-go v0.0.8-0.20261126060006-feba8217c4a5
 )
@@ -39,7 +40,9 @@ require (
 )
 
 require (
+	filippo.io/age v1.3.1 // indirect
 	filippo.io/edwards25519 v1.2.0 // indirect
+	filippo.io/hpke v0.4.0 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
 	github.com/CHIZI-0618/sing-ebpf v0.1.0-beta.3 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
@@ -48,7 +51,7 @@ require (
 	github.com/akutz/memconn v0.1.0 // indirect
 	github.com/alexbrainman/sspi v0.0.0-20250919150558-7d374ff0d59e // indirect
 	github.com/anchore/go-lzo v0.1.0 // indirect
-	github.com/andybalholm/brotli v1.1.0 // indirect
+	github.com/andybalholm/brotli v1.3.0 // indirect
 	github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be // indirect
 	github.com/anthropics/anthropic-sdk-go v1.26.0 // indirect
 	github.com/axiomhq/hyperloglog v0.2.6 // indirect
@@ -60,7 +63,6 @@ require (
 	github.com/coreos/go-iptables v0.8.0 // indirect
 	github.com/coreos/go-oidc/v3 v3.17.0 // indirect
 	github.com/creack/pty v1.1.24 // indirect
-	github.com/cretz/bine v0.2.0 // indirect
 	github.com/database64128/netx-go v0.1.1 // indirect
 	github.com/database64128/tfo-go/v2 v2.4.2 // indirect
 	github.com/dblohm7/wingoes v0.0.0-20260526185140-fb298caac7ca // indirect
@@ -69,6 +71,7 @@ require (
 	github.com/distribution/reference v0.5.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/ebitengine/purego v0.10.0 // indirect
+	github.com/exclavenetwork/sing-juicity v0.3.1 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/florianl/go-nfqueue/v2 v2.1.0 // indirect
 	github.com/fsnotify/fsnotify v1.10.1 // indirect
@@ -101,7 +104,7 @@ require (
 	github.com/jsimonetti/rtnetlink v1.4.2 // indirect
 	github.com/kamstrup/intmap v0.5.2 // indirect
 	github.com/keybase/go-keychain v0.0.1 // indirect
-	github.com/klauspost/compress v1.20.2 // indirect
+	github.com/klauspost/compress v1.20.5 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/koron/go-ssdp v0.0.4 // indirect
 	github.com/kr/fs v0.1.0 // indirect
@@ -197,6 +200,8 @@ require (
 	github.com/u-root/uio v0.0.0-20240224005618-d2acac8f3701 // indirect
 	github.com/vishvananda/netns v0.0.5 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
+	github.com/xchacha20-poly1305/sing-easyconnect v0.0.0-20260920130336-50752d75289c // indirect
+	github.com/xchacha20-poly1305/sing-trusttunnel v0.4.0-beta.1.0.20261126021110-c9ea50baaec1 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78 // indirect
 	github.com/zeebo/blake3 v0.2.4 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
@@ -227,6 +232,6 @@ require (
 	google.golang.org/protobuf v1.36.12 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gotest.tools/v3 v3.5.1 // indirect
-	lukechampine.com/blake3 v1.3.0 // indirect
+	lukechampine.com/blake3 v1.4.1 // indirect
 	zombiezen.com/go/capnproto2 v2.18.2+incompatible // indirect
 )

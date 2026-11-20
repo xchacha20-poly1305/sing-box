@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 	"time"
 
@@ -30,15 +32,43 @@ type DockerOptions struct {
 }
 
 func startDockerContainer(t *testing.T, options DockerOptions) {
+	t.Helper()
+	dockerClient, containerID, _ := createDockerContainer(t, options)
+	require.NoError(t, dockerClient.ContainerStart(t.Context(), containerID, container.StartOptions{}))
+	if len(options.Stdin) > 0 {
+		stdinAttach, err := dockerClient.ContainerAttach(t.Context(), containerID, container.AttachOptions{
+			Stdin:  true,
+			Stream: true,
+		})
+		require.NoError(t, err)
+		_, err = stdinAttach.Conn.Write(options.Stdin)
+		require.NoError(t, err)
+		stdinAttach.Close()
+	}
+	if debug.Enabled {
+		attach, err := dockerClient.ContainerAttach(t.Context(), containerID, container.AttachOptions{
+			Stdout: true,
+			Stderr: true,
+			Logs:   true,
+			Stream: true,
+		})
+		require.NoError(t, err)
+		t.Cleanup(attach.Close)
+		go func() {
+			stdcopy.StdCopy(os.Stderr, os.Stderr, attach.Reader)
+		}()
+	}
+	time.Sleep(time.Second)
+}
+
+func createDockerContainer(t *testing.T, options DockerOptions) (*client.Client, string, func()) {
+	t.Helper()
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	require.NoError(t, err)
-	defer dockerClient.Close()
-
-	writeStdin := len(options.Stdin) > 0
+	t.Cleanup(func() { _ = dockerClient.Close() })
 
 	var containerOptions container.Config
-
-	if writeStdin {
+	if len(options.Stdin) > 0 {
 		containerOptions.OpenStdin = true
 		containerOptions.StdinOnce = true
 	}
@@ -78,44 +108,27 @@ func startDockerContainer(t *testing.T, options DockerOptions) {
 		}
 	}
 
-	dockerContainer, err := dockerClient.ContainerCreate(context.Background(), &containerOptions, &hostOptions, nil, nil, "")
+	dockerContainer, err := dockerClient.ContainerCreate(t.Context(), &containerOptions, &hostOptions, nil, nil, "")
 	require.NoError(t, err)
-	t.Cleanup(func() {
-		cleanContainer(dockerContainer.ID)
+	remove := sync.OnceFunc(func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		defer cancel()
+		err := dockerClient.ContainerRemove(ctx, dockerContainer.ID, container.RemoveOptions{Force: true, RemoveVolumes: true})
+		if !client.IsErrNotFound(err) {
+			require.NoError(t, err)
+		}
 	})
-
-	require.NoError(t, dockerClient.ContainerStart(context.Background(), dockerContainer.ID, container.StartOptions{}))
-
-	if writeStdin {
-		stdinAttach, err := dockerClient.ContainerAttach(context.Background(), dockerContainer.ID, container.AttachOptions{
-			Stdin:  writeStdin,
-			Stream: true,
-		})
-		require.NoError(t, err)
-		_, err = stdinAttach.Conn.Write(options.Stdin)
-		require.NoError(t, err)
-		stdinAttach.Close()
-	}
-	if debug.Enabled {
-		attach, err := dockerClient.ContainerAttach(context.Background(), dockerContainer.ID, container.AttachOptions{
-			Stdout: true,
-			Stderr: true,
-			Logs:   true,
-			Stream: true,
-		})
-		require.NoError(t, err)
-		go func() {
-			stdcopy.StdCopy(os.Stderr, os.Stderr, attach.Reader)
-		}()
-	}
-	time.Sleep(time.Second)
+	t.Cleanup(remove)
+	return dockerClient, dockerContainer.ID, remove
 }
 
-func cleanContainer(id string) error {
-	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+func readDockerLogs(ctx context.Context, dockerClient *client.Client, containerID string) ([]byte, error) {
+	logs, err := dockerClient.ContainerLogs(ctx, containerID, container.LogsOptions{ShowStdout: true, ShowStderr: true})
 	if err != nil {
-		return err
+		return nil, err
 	}
-	defer dockerClient.Close()
-	return dockerClient.ContainerRemove(context.Background(), id, container.RemoveOptions{Force: true})
+	defer logs.Close()
+	var output bytes.Buffer
+	_, err = stdcopy.StdCopy(&output, &output, logs)
+	return output.Bytes(), err
 }

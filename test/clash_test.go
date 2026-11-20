@@ -37,6 +37,7 @@ const (
 	ImageNginx                 = "nginx:stable"
 	ImageShadowTLS             = "ghcr.io/ihciah/shadow-tls:latest"
 	ImageXRayCore              = "teddysun/xray:latest"
+	ImageXRayCoreVLESS         = "ghcr.io/xtls/xray-core:26.11.9"
 	ImageShadowsocksLegacy     = "mritd/shadowsocks:latest"
 	ImageTUICServer            = "kilvn/tuic-server:latest"
 	ImageTUICClient            = "kilvn/tuic-client:latest"
@@ -54,6 +55,7 @@ var allImages = []string{
 	ImageNginx,
 	ImageShadowTLS,
 	ImageXRayCore,
+	ImageXRayCoreVLESS,
 	ImageShadowsocksLegacy,
 	ImageTUICServer,
 	ImageTUICClient,
