@@ -44,6 +44,7 @@ import (
 	providerLocal "github.com/sagernet/sing-box/provider/local"
 	"github.com/sagernet/sing-box/provider/remote"
 	"github.com/sagernet/sing-box/service/api"
+	"github.com/sagernet/sing-box/service/doh"
 	originca "github.com/sagernet/sing-box/service/origin_ca"
 	"github.com/sagernet/sing-box/service/resolved"
 	E "github.com/sagernet/sing/common/exceptions"
@@ -170,6 +171,7 @@ func ServiceRegistry() *service.Registry {
 	registry := service.NewRegistry()
 
 	api.RegisterService(registry)
+	doh.RegisterService(registry)
 	resolved.RegisterService(registry)
 	// ssmapi.RegisterService(registry)
 

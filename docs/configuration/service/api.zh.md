@@ -33,6 +33,10 @@ program 和 map 时添加 `--deep`。这只会按请求检查可见的 sing-ebpf
   "secret": "",
   "access_control_allow_origin": [],
   "access_control_allow_private_network": false,
+  "dns": {
+    "enabled": false,
+    "path": "/dns-query"
+  },
   "dashboard": {
     "enabled": true,
     "path": "",
@@ -65,6 +69,21 @@ API 密钥。
 #### access_control_allow_private_network
 
 允许从私有网络访问。
+
+#### dns
+
+启用后，在 API 监听地址上提供 [DNS over HTTP(S)](/zh/configuration/service/doh/)。
+请求通过内部 DNS 路由器处理，使用 `Authorization: Bearer <secret>` 认证。未设置 `secret` 时允许匿名查询。
+
+DoH 复用此 API 的 TLS 配置。
+
+##### enabled
+
+启用 DoH。默认关闭。
+
+##### path
+
+DoH 的 URL 路径。默认使用 `/dns-query`。必须是规范的绝对路径，且不能与现有 API 路由及其挂载的子树冲突。
 
 #### dashboard
 

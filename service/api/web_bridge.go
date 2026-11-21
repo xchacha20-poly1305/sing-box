@@ -26,7 +26,7 @@ const (
 // (https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-WEB.md) and gRPC-Web
 // streams over WebSocket, wire compatible with the improbable-eng/grpc-web
 // client transports.
-func newHTTPHandler(logger log.ContextLogger, grpcServer *grpc.Server, options option.APIServiceOptions, dashboard *dashboard, observability http.Handler) http.Handler {
+func newHTTPHandler(logger log.ContextLogger, grpcServer *grpc.Server, options option.APIServiceOptions, dashboard *dashboard, observability http.Handler, dohPath string, doh http.Handler) http.Handler {
 	allowedOrigins := options.AccessControlAllowOrigin
 	if len(allowedOrigins) == 0 {
 		allowedOrigins = []string{"*"}
@@ -44,6 +44,8 @@ func newHTTPHandler(logger log.ContextLogger, grpcServer *grpc.Server, options o
 		grpcServer:    grpcServer,
 		dashboard:     dashboard,
 		observability: observability,
+		dohPath:       dohPath,
+		doh:           doh,
 	})
 }
 
@@ -52,13 +54,17 @@ type webBridge struct {
 	grpcServer    *grpc.Server
 	dashboard     *dashboard
 	observability http.Handler
+	dohPath       string
+	doh           http.Handler
 }
 
 func (b *webBridge) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	contentType := request.Header.Get("Content-Type")
 	switch {
-	case b.observability != nil && (request.URL.Path == "/observability/v1" || strings.HasPrefix(request.URL.Path, "/observability/v1/")):
+	case b.observability != nil && (request.URL.Path == observabilityRoutePrefix || strings.HasPrefix(request.URL.Path, observabilityRoutePrefix+"/")):
 		b.observability.ServeHTTP(writer, request)
+	case b.doh != nil && request.URL.EscapedPath() == b.dohPath:
+		b.doh.ServeHTTP(writer, request)
 	case isWebSocketGRPCRequest(request):
 		b.serveWebSocket(writer, request)
 	case request.Method == http.MethodPost && strings.HasPrefix(contentType, contentTypeGRPCWeb):

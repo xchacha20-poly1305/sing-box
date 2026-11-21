@@ -60,6 +60,8 @@ type ClashAPIOptions struct {
 	StoreFakeIP bool `json:"store_fakeip,omitempty" schema:"omit"`
 	// Deprecated: use external_ui_http_client instead
 	ExternalUIDownloadDetour string `json:"external_ui_download_detour,omitempty" reference:"outbound" schema:"omit"`
+
+	DNS *ApiDnsOptions `json:"dns,omitempty"`
 }
 
 type V2RayAPIOptions struct {

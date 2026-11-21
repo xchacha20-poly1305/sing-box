@@ -41,6 +41,7 @@ const (
 	TypeResolved           = "resolved"
 	TypeSSMAPI             = "ssm-api"
 	TypeAPI                = "api"
+	TypeDoH                = "doh"
 	TypeCCM                = "ccm"
 	TypeOCM                = "ocm"
 	TypeOOMKiller          = "oom-killer"

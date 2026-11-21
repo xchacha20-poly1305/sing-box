@@ -224,6 +224,7 @@ nav:
           - configuration/service/index.md
           - sing-box API: configuration/service/api.md
           - DERP: configuration/service/derp.md
+          - DNS over HTTP(S): configuration/service/doh.md
           - Resolved: configuration/service/resolved.md
           - SSM API: configuration/service/ssm-api.md
           - CCM: configuration/service/ccm.md

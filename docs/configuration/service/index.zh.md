@@ -26,6 +26,7 @@ icon: material/new-box
 | `api`             | [sing-box API](./api)                 |
 | `ccm`             | [CCM](./ccm)                          |
 | `derp`            | [DERP](./derp)                        |
+| `doh`             | [DNS over HTTP(S)](./doh)             |
 | `hysteria-realm`  | [Hysteria Realm](./hysteria-realm)    |
 | `ocm`             | [OCM](./ocm)                          |
 | `resolved`        | [Resolved](./resolved)                |

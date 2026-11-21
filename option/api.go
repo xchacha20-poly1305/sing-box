@@ -15,6 +15,8 @@ type APIServiceOptions struct {
 	AccessControlAllowPrivateNetwork bool                       `json:"access_control_allow_private_network,omitempty"`
 	Dashboard                        *APIDashboardOptions       `json:"dashboard,omitempty"`
 	InboundTLSOptionsContainer
+
+	DNS *ApiDnsOptions `json:"dns,omitempty"`
 }
 
 type _APIDashboardOptions struct {

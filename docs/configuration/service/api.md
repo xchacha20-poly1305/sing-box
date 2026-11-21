@@ -38,6 +38,10 @@ same `secret` and TLS configuration.
   "secret": "",
   "access_control_allow_origin": [],
   "access_control_allow_private_network": false,
+  "dns": {
+    "enabled": false,
+    "path": "/dns-query"
+  },
   "dashboard": {
     "enabled": true,
     "path": "",
@@ -70,6 +74,23 @@ CORS allowed origins, `*` will be used if empty.
 #### access_control_allow_private_network
 
 Allow access from private network.
+
+#### dns
+
+Serve [DNS over HTTP(S)](/configuration/service/doh/) on the API listener.
+Queries use the internal DNS router and authenticate with `Authorization: Bearer <secret>`.
+If `secret` is empty, queries are anonymous.
+
+DoH shares the API listener’s TLS configuration.
+
+##### enabled
+
+Enable DoH. Disabled by default.
+
+##### path
+
+The DoH URL path. Defaults to `/dns-query`. Use a canonical absolute path that
+does not conflict with existing API routes or mounted subtrees.
 
 #### dashboard
 

@@ -35,6 +35,10 @@
       "default_mode": "",
       "access_control_allow_origin": [],
       "access_control_allow_private_network": false,
+      "dns": {
+        "enabled": false,
+        "path": "/dns-query"
+      },
       
       // Deprecated
 
@@ -84,6 +88,21 @@
     HTTP API 会挂载到该 Controller，并使用相同的 `secret` 保护。
 
 ### Fields
+
+#### dns
+
+启用后，在 API 监听地址上提供 [DNS over HTTP(S)](/zh/configuration/service/doh/)。
+请求通过内部 DNS 路由器处理，使用 `Authorization: Bearer <secret>` 认证。未设置 `secret` 时允许匿名查询。
+
+Clash API 提供 HTTP 监听，可通过反向代理提供 HTTPS。
+
+##### enabled
+
+启用 DoH。默认关闭。
+
+##### path
+
+DoH 的 URL 路径。默认使用 `/dns-query`。必须是规范的绝对路径，且不能与现有 API 路由及其挂载的子树冲突。
 
 #### external_controller
 

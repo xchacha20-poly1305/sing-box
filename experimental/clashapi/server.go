@@ -16,6 +16,7 @@ import (
 
 	"github.com/sagernet/cors"
 	"github.com/sagernet/sing-box/adapter"
+	"github.com/sagernet/sing-box/common/doh"
 	"github.com/sagernet/sing-box/common/trafficcontrol"
 	"github.com/sagernet/sing-box/common/urltest"
 	C "github.com/sagernet/sing-box/constant"
@@ -143,7 +144,7 @@ func NewServer(ctx context.Context, logFactory log.ObservableFactory, options op
 	})
 	chiRouter.Use(cors.Handler)
 	chiRouter.Group(func(r chi.Router) {
-		r.Use(authentication(options.Secret))
+		r.Use(authentication(options.Secret, true))
 		r.Get("/", hello(options.ExternalUI != ""))
 		r.Get("/logs", getLogs(s.ctx, logFactory))
 		r.Get("/traffic", traffic(s.ctx, trafficManager))
@@ -168,6 +169,29 @@ func NewServer(ctx context.Context, logFactory log.ObservableFactory, options op
 
 		s.setupMetaAPI(r)
 	})
+	if dns := options.DNS; dns != nil && options.DNS.Enabled {
+		path, err := doh.ResolvePath(options.DNS.Path)
+		if err != nil {
+			return nil, err
+		}
+		for _, subtree := range []string{"/ui", "/restart", "/observability/v1"} {
+			err := doh.CheckPathConflict(path, subtree)
+			if err != nil {
+				return nil, err
+			}
+		}
+		for _, route := range chiRouter.Routes() {
+			if subtree, mounted := strings.CutSuffix(route.Pattern, "/*"); mounted {
+				err := doh.CheckPathConflict(path, subtree)
+				if err != nil {
+					return nil, err
+				}
+			} else if path == route.Pattern {
+				return nil, E.New("doh.path ", path, " conflicts with ", route.Pattern)
+			}
+		}
+		chiRouter.With(authentication(options.Secret, false)).Handle(path, doh.NewHandler(s.dnsRouter, path, "", ""))
+	}
 	if options.ExternalUI != "" {
 		s.externalUI = filemanager.BasePath(ctx, os.ExpandEnv(options.ExternalUI))
 		_, err := filemanager.ReadDir(ctx, s.externalUI)
@@ -280,7 +304,7 @@ func (s *Server) closeUpdate() error {
 	return nil
 }
 
-func authentication(serverSecret string) func(next http.Handler) http.Handler {
+func authentication(serverSecret string, allowWebSocketToken bool) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
 			if serverSecret == "" {
@@ -289,7 +313,7 @@ func authentication(serverSecret string) func(next http.Handler) http.Handler {
 			}
 
 			// Browser websocket not support custom header
-			if r.Header.Get("Upgrade") == "websocket" && r.URL.Query().Get("token") != "" {
+			if allowWebSocketToken && r.Header.Get("Upgrade") == "websocket" && r.URL.Query().Get("token") != "" {
 				token := r.URL.Query().Get("token")
 				if token != serverSecret {
 					render.Status(r, http.StatusUnauthorized)

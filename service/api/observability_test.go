@@ -15,7 +15,7 @@ func TestObservabilityAuthenticationAndRouting(t *testing.T) {
 		writer.WriteHeader(http.StatusNoContent)
 	})
 	handler := &webBridge{
-		observability: authenticateObservability("secret", http.StripPrefix("/observability/v1", target)),
+		observability: authenticateHTTP("secret", http.StripPrefix("/observability/v1", target)),
 	}
 
 	request := httptest.NewRequest(http.MethodGet, "/observability/v1/status", nil)

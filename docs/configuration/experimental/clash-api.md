@@ -35,6 +35,10 @@
       "default_mode": "",
       "access_control_allow_origin": [],
       "access_control_allow_private_network": false,
+      "dns": {
+        "enabled": false,
+        "path": "/dns-query"
+      },
       
       // Deprecated
 
@@ -85,6 +89,23 @@
     the same `secret`.
 
 ### Fields
+
+#### dns
+
+Serve [DNS over HTTP(S)](/configuration/service/doh/) on the API listener.
+Queries use the internal DNS router and authenticate with `Authorization: Bearer <secret>`.
+If `secret` is empty, queries are anonymous.
+
+Clash API listens over HTTP. A reverse proxy can provide HTTPS.
+
+##### enabled
+
+Enable DoH. Disabled by default.
+
+##### path
+
+The DoH URL path. Defaults to `/dns-query`. Use a canonical absolute path that
+does not conflict with existing API routes or mounted subtrees.
 
 #### external_controller
 
